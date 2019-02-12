@@ -1,3 +1,8 @@
+/*
+* 3D Vision CM Unleashed
+* Copyright (c) Helifax 2019
+*/
+
 #pragma once
 
 #include <vector>

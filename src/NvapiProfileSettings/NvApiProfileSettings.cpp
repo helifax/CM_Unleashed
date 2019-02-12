@@ -1,6 +1,12 @@
 /*
+* 3D Vision CM Unleashed
+* Copyright (c) Helifax 2019
+*/
+
+/*
 Author: Helifax
-Data: 24.94.2015
+Original Date: 24.04.2015
+Updated 12.02.2019
 
 Interface to NVAPI to handle profile modification/creation in order for 3D Vision to render Properly!
 */

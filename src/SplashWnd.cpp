@@ -1,3 +1,7 @@
+/*
+* 3D Vision CM Unleashed
+* Copyright (c) Helifax 2019
+*/
 
 #include <Windows.h>
 #include <CommCtrl.h>
