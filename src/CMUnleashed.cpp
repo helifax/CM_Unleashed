@@ -53,7 +53,7 @@ DWORD CMUnleashed::getPid(std::string &_process)
     PROCESSENTRY32 pt;
     hsnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     pt.dwSize = sizeof(PROCESSENTRY32);
-    do
+    while(Process32Next(hsnap, &pt))
     {
         if(!strcmp(pt.szExeFile, _process.c_str()))
         {
@@ -70,7 +70,7 @@ DWORD CMUnleashed::getPid(std::string &_process)
             CloseHandle(hsnap);
             return pid;
         }
-    } while(Process32Next(hsnap, &pt));
+    }
     CloseHandle(hsnap);
     return 0;
 }

@@ -127,6 +127,12 @@ public:
     }
     // ---------------------------------------------------------------------------------------------
 
+    uint32_t GetAutoStartMs()
+    {
+        return _autoStartDelayMs;
+    }
+    // ---------------------------------------------------------------------------------------------
+
     bool UpdateCMProfile()
     {
         return _enableNvapiProfileUpdate;
@@ -165,6 +171,7 @@ private:
     std::vector<ALT_KEYS_T> _altKeys;
     std::string _gameExe = "";
     bool _autoStart = false;
+    uint32_t _autoStartDelayMs = 10000;
 
     bool _enableNvapiProfileUpdate = false;
     uint32_t _stereoTexture = 1;

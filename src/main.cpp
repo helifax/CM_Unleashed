@@ -36,9 +36,16 @@ static std::deque<float> queuedSep;
 static bool _isPatchEnabled = false;
 static bool _mainMenu = true;
 static bool _infoMenu = false;
-static bool _profileUpdateOK = false;
 static bool _pidMonitorStarted = false;
 static bool _autoStartStarted = false;
+static bool _manuallyDisabled = false;
+
+// Threads
+static bool _exeThreadSingleInstance = false;
+static void _ExeMonitorThread();
+static bool _AutoThreadSingleInstance = false;
+static void _AutoStart();
+static void _KeyThread();
 
 // GLOBAL PRINT
 void __cdecl console_log(const char *fmt, ...)
@@ -247,50 +254,109 @@ static void _Run_Keys_Toggle(size_t keyIndex, size_t &returnIndex)
 
 static void _ExeMonitorThread()
 {
-    std::string exeName = g_reader->GetGameExe();
-    while(g_cmUnleashed->GetExePid() && _pidMonitorStarted)
+    if(!_exeThreadSingleInstance)
     {
-        _pidMonitorStarted = true;
-        g_cmUnleashed->UpdateExePid(g_cmUnleashed->getPid(exeName));
+        _exeThreadSingleInstance = true;
+        printf("Starting Monitor Thread.\n");
 
-        // Look every 5 secondS
-        if(g_cmUnleashed->GetExePid())
-            Sleep(5000);
+        std::string exeName = g_reader->GetGameExe();
+        while(g_cmUnleashed->GetExePid() && _pidMonitorStarted)
+        {
+            DWORD pid = g_cmUnleashed->getPid(exeName);
+            g_cmUnleashed->UpdateExePid(pid);
+
+            // Look every 2 secondS
+            if(g_cmUnleashed->GetExePid())
+                Sleep(2000);
+        }
+
+        // If we get here it means the application died!
+        _exeThreadSingleInstance = false;
+        g_cmUnleashed->RestoreOriginal(exeName);
+        _pidMonitorStarted = false;
+        _isPatchEnabled = false;
+        printf("Monitor Thread Stopped.\n");
+
+        // Restart the auto-start if enabled
+        if(g_reader->AutoStartEnabled() && !_manuallyDisabled)
+        {
+            _autoStartStarted = true;
+            std::thread autoStart(_AutoStart);
+            autoStart.detach();
+        }
     }
-
-    // If we get here it means the application died!
-    g_cmUnleashed->RestoreOriginal(exeName);
-    _pidMonitorStarted = false;
-    _isPatchEnabled = false;
 }
 //-----------------------------------------------------------------------------
 
 static void _AutoStart()
 {
-    bool exeFound = false;
-    while(!exeFound && _autoStartStarted)
+    if(!_AutoThreadSingleInstance)
     {
-        std::string gameExeName = g_reader->GetGameExe();
-        DWORD exePid = g_cmUnleashed->getPid(gameExeName);
+        _AutoThreadSingleInstance = true;
+        bool exeFound = false;
+        uint32_t delay = g_reader->GetAutoStartMs();
 
-        if(exePid != 0)
+        if(g_reader->AutoStartEnabled())
+            console_log("AutoStart Enabled. Looking for %s ...\n\n", g_reader->GetGameExe().c_str());
+        while(!exeFound && _autoStartStarted)
         {
-            exeFound = true;
-            console_log("%s found! Attempting to Enable!\n", gameExeName.c_str());
-            // Wait a bit!
-            Sleep(10000);
-            // Enable the Patching
-            _isPatchEnabled = g_cmUnleashed->DoPatching(gameExeName);
-            break;
-        }
-        Sleep(1000);
-    }
-    _autoStartStarted = false;
+            std::string gameExeName = g_reader->GetGameExe();
+            DWORD exePid = g_cmUnleashed->getPid(gameExeName);
 
-    // Start our monitor thread
-    _pidMonitorStarted = true;
-    std::thread pidMonitor(_ExeMonitorThread);
-    pidMonitor.detach();
+            if(exePid != 0)
+            {
+                // Profile Update
+                if(g_reader->UpdateCMProfile())
+                {
+                    bool profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
+
+                    if(!profileUpdateOK)
+                    {
+                        console_log("\n-----------------------------------------------------------------------------\n");
+                        console_log("!!!Could not update the Nvidia Profile with the Compatibility Mode Values !!!\n");
+                        console_log("Are you sure you are in \"RUN AS ADMIN\" Mode?!?!\n");
+                        console_log("-----------------------------------------------------------------------------\n\n");
+                    }
+                    else
+                    {
+                        console_log("\n-----------------------------------------------------------------------------\n");
+                        console_log("Nvidia Profile Updated with the CM flags. (You might need to restart the game!)\n");
+                        console_log("-------------------------------------------------------------------------------\n\n");
+                    }
+                }
+
+                exeFound = true;
+                if(g_reader->AutoStartEnabled())
+                {
+                    console_log("%s found! Attempting to Enable in:", gameExeName.c_str());
+
+                    while(delay)
+                    {
+                        printf(" %d", delay / 1000);
+                        delay -= 1000;
+                        Sleep(1000);
+                    }
+                    console_log("\n");
+
+                    // Enable the Patching
+                    _isPatchEnabled = g_cmUnleashed->DoPatching(gameExeName);
+                }
+                break;
+            }
+            else
+                Sleep(1000);
+        }
+        _autoStartStarted = false;
+        _AutoThreadSingleInstance = false;
+
+        // Start our monitor thread
+        _pidMonitorStarted = true;
+        std::string exeName = g_reader->GetGameExe();
+        DWORD pid = g_cmUnleashed->getPid(exeName);
+        g_cmUnleashed->UpdateExePid(pid);
+        std::thread pidMonitor(_ExeMonitorThread);
+        pidMonitor.detach();
+    }
 }
 //-----------------------------------------------------------------------------
 
@@ -305,20 +371,12 @@ static void _KeyThread()
 
             if(!_isPatchEnabled)
             {
-                // Do it again, as the ini file could have changed
-                if(g_reader->UpdateCMProfile())
-                    _profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
-
                 // Do the patching
                 _isPatchEnabled = g_cmUnleashed->DoPatching(gameExeName);
 
                 // Start the monitor thread
                 if(_isPatchEnabled)
                 {
-                    // Wait for the current monitor to end.
-                    while(_pidMonitorStarted)
-                        Sleep(100);
-
                     // Start or-restart
                     _pidMonitorStarted = true;
                     std::thread pidMonitor(_ExeMonitorThread);
@@ -333,10 +391,11 @@ static void _KeyThread()
                 g_cmUnleashed->RestoreOriginal(gameExeName);
 
                 // stop the monitor
+                _manuallyDisabled = true;
                 _pidMonitorStarted = false;
+                while(_pidMonitorStarted)
+                    Sleep(100);
             }
-
-            Sleep(300);
         }
         else if(IsKeyDown(VK_CONTROL) && IsKeyDown(VK_SHIFT) && IsKeyDown(VK_HOME))
         {
@@ -368,7 +427,8 @@ static void _KeyThread()
             if(g_reader)
             {
                 _autoStartStarted = false;
-                Sleep(500);
+                while(_autoStartStarted)
+                    Sleep(100);
 
                 // Disable the Patching (if applied)
                 _isPatchEnabled = false;
@@ -377,20 +437,17 @@ static void _KeyThread()
 
                 // stop the monitor
                 _pidMonitorStarted = false;
-                Sleep(500);
+                while(_pidMonitorStarted)
+                    Sleep(100);
 
                 delete g_reader;
                 g_reader = new ConfigReader();
+                _manuallyDisabled = false;
                 PlaySound(TEXT("DeviceConnect"), NULL, SND_ALIAS | SND_ASYNC);
 
-                // Re-try Auto-Start?
-                if(g_reader->AutoStartEnabled())
-                {
-                    console_log("AutoStart Enabled. Looking for %s ...\n\n", g_reader->GetGameExe().c_str());
-                    _autoStartStarted = true;
-                    std::thread autoStart(_AutoStart);
-                    autoStart.detach();
-                }
+                _autoStartStarted = true;
+                std::thread autoStart(_AutoStart);
+                autoStart.detach();
             }
 
             Sleep(300);
@@ -505,23 +562,6 @@ static void showIntroMenu()
     console_log("(Always \"RUN AS ADMIN\" !)\n");
     console_log("(Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!)\n");
     console_log("(To refresh this Console Window press \"SPACE\" followed by \"ENTER\".)\n\n");
-
-    if(g_reader->UpdateCMProfile())
-    {
-        if(!_profileUpdateOK)
-        {
-            console_log("-----------------------------------------------------------------------------\n");
-            console_log("!!!Could not update the Nvidia Profile with the Compatibility Mode Values !!!\n");
-            console_log("Are you sure you are in \"RUN AS ADMIN\" Mode?!?!\n");
-            console_log("-----------------------------------------------------------------------------\n\n");
-        }
-        else
-        {
-            console_log("-------------------------------------------------------------------------\n");
-            console_log("Nvidia Profile Updated with the Compatibility Mode values, as instructed!\n");
-            console_log("-------------------------------------------------------------------------\n\n");
-        }
-    }
 }
 //-----------------------------------------------------------------------------
 
@@ -536,10 +576,6 @@ static void showMenu()
     console_log("3. Do you want to see screenshots? Or to discuss? Let's do it on GeForce Forums thread! (opens Web-page)\n");
     console_log("4. Looking for an update? Check here! (opens Web-page)\n");
     console_log("5. Quit.\n\n");
-    if(g_reader->AutoStartEnabled())
-    {
-        console_log("AutoStart Enabled. Looking for %s ...\n\n", g_reader->GetGameExe().c_str());
-    }
     console_log("Awaiting commands :)\n");
 }
 //-----------------------------------------------------------------------------
@@ -571,7 +607,6 @@ static void showInfo()
     console_log("- Change \"GameExecutable\" for the game EXE you want to play.\n");
     console_log("  (Make sure there are no spaces and the name is in quotes: GameExecutable=\"re2.exe\").\n");
     console_log("- Set \"AutoStart\" to true, if you want to attempt to automatically start the Patching once the EXE is detected!\n");
-    console_log("  (This can fail! If the game doesn't load and 3DVision doesn't start in a 15 seconds frame, then we abort!\n   However, the tool can still be enabled manually!)\n");
     console_log("- Under \"[Key_Settings]\" add your shortcut keys.\n");
     console_log("- (Read the examples in the \"3DVision_CM_Unleshed.ini\" file).\n");
     console_log("-------------------------------------------------------------------\n");
@@ -716,16 +751,6 @@ int main()
     splash.Hide();
     GdiplusShutdown(gdiplusToken);
 
-    // Setup the profile if requireds
-    if(g_reader->UpdateCMProfile())
-    {
-        _profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
-        if(!_profileUpdateOK)
-        {
-            PlaySound(TEXT("CriticalStop"), NULL, SND_ALIAS | SND_ASYNC);
-        }
-    }
-
     // Show the menu
     showIntroMenu();
 
@@ -736,13 +761,10 @@ int main()
     std::thread keyThread(_KeyThread);
     keyThread.detach();
 
-    // Auto-Start
-    if(g_reader->AutoStartEnabled())
-    {
-        _autoStartStarted = true;
-        std::thread autoStart(_AutoStart);
-        autoStart.detach();
-    }
+    // Auto-Start & Profile Update
+    _autoStartStarted = true;
+    std::thread autoStart(_AutoStart);
+    autoStart.detach();
 
     showMenu();
     menukeyHandler();

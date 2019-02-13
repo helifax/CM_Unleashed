@@ -56,6 +56,14 @@ ConfigReader::ConfigReader()
                         _autoStart = false;
                     }
                 }
+                if((configLine.find("AutoStartDelay") != std::string::npos) && (configLine.find(";") == std::string::npos))
+                {
+                    size_t position = configLine.find("=");
+                    std::string value = configLine.substr(position + 1);
+                    uint32_t crtValue = stoi(value) * 1000;
+                    _autoStartDelayMs = crtValue > 0 ? crtValue : 10000;
+                }
+
                 if((configLine.find("2DDEnableUpdates") != std::string::npos) && (configLine.find(";") == std::string::npos))
                 {
                     if(configLine.find("true") != std::string::npos)
