@@ -711,7 +711,7 @@ int main()
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
     CSplashWnd splash;
     splash.Show();
-    //Sleep(4000);
+    Sleep(4000);
     splash.Hide();
     GdiplusShutdown(gdiplusToken);
 
