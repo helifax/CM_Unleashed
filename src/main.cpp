@@ -512,6 +512,7 @@ static void showIntroMenu()
         {
             console_log("-----------------------------------------------------------------------------\n");
             console_log("!!!Could not update the Nvidia Profile with the Compatibility Mode Values !!!\n");
+            console_log("Are you sure you are in \"RUN AS ADMIN\" Mode?!?!\n");
             console_log("-----------------------------------------------------------------------------\n\n");
         }
         else
