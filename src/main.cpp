@@ -37,6 +37,8 @@ static bool _isPatchEnabled = false;
 static bool _mainMenu = true;
 static bool _infoMenu = false;
 static bool _profileUpdateOK = false;
+static bool _pidMonitorStarted = false;
+static bool _autoStartStarted = false;
 
 // GLOBAL PRINT
 void __cdecl console_log(const char *fmt, ...)
@@ -243,10 +245,30 @@ static void _Run_Keys_Toggle(size_t keyIndex, size_t &returnIndex)
 }
 //-----------------------------------------------------------------------------
 
+static void _ExeMonitorThread()
+{
+    std::string exeName = g_reader->GetGameExe();
+    while(g_cmUnleashed->GetExePid() && _pidMonitorStarted)
+    {
+        _pidMonitorStarted = true;
+        g_cmUnleashed->UpdateExePid(g_cmUnleashed->getPid(exeName));
+
+        // Look every 5 secondS
+        if(g_cmUnleashed->GetExePid())
+            Sleep(5000);
+    }
+
+    // If we get here it means the application died!
+    g_cmUnleashed->RestoreOriginal(exeName);
+    _pidMonitorStarted = false;
+    _isPatchEnabled = false;
+}
+//-----------------------------------------------------------------------------
+
 static void _AutoStart()
 {
     bool exeFound = false;
-    while(!exeFound)
+    while(!exeFound && _autoStartStarted)
     {
         std::string gameExeName = g_reader->GetGameExe();
         DWORD exePid = g_cmUnleashed->getPid(gameExeName);
@@ -263,6 +285,12 @@ static void _AutoStart()
         }
         Sleep(1000);
     }
+    _autoStartStarted = false;
+
+    // Start our monitor thread
+    _pidMonitorStarted = true;
+    std::thread pidMonitor(_ExeMonitorThread);
+    pidMonitor.detach();
 }
 //-----------------------------------------------------------------------------
 
@@ -276,13 +304,36 @@ static void _KeyThread()
             std::string gameExeName = g_reader->GetGameExe();
 
             if(!_isPatchEnabled)
+            {
+                // Do it again, as the ini file could have changed
+                if(g_reader->UpdateCMProfile())
+                    _profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
+
+                // Do the patching
                 _isPatchEnabled = g_cmUnleashed->DoPatching(gameExeName);
+
+                // Start the monitor thread
+                if(_isPatchEnabled)
+                {
+                    // Wait for the current monitor to end.
+                    while(_pidMonitorStarted)
+                        Sleep(100);
+
+                    // Start or-restart
+                    _pidMonitorStarted = true;
+                    std::thread pidMonitor(_ExeMonitorThread);
+                    pidMonitor.detach();
+                }
+            }
             else
             {
                 // If there is an error here
                 // We assume we couldn't clean and the patch is not applied!
                 _isPatchEnabled = false;
                 g_cmUnleashed->RestoreOriginal(gameExeName);
+
+                // stop the monitor
+                _pidMonitorStarted = false;
             }
 
             Sleep(300);
@@ -311,15 +362,35 @@ static void _KeyThread()
         {
             console_log("-------------------------------------------------------------------\n");
             console_log("\"3DVision_CM_Unleashed.ini\" file successfully read!\n");
-            console_log(" If you modified the \"GameExecutable\", restart this application!\n");
             console_log("-------------------------------------------------------------------\n\n");
 
             // Re-trigger the config reader
             if(g_reader)
             {
+                _autoStartStarted = false;
+                Sleep(500);
+
+                // Disable the Patching (if applied)
+                _isPatchEnabled = false;
+                std::string gameExeName = g_reader->GetGameExe();
+                g_cmUnleashed->RestoreOriginal(gameExeName);
+
+                // stop the monitor
+                _pidMonitorStarted = false;
+                Sleep(500);
+
                 delete g_reader;
                 g_reader = new ConfigReader();
                 PlaySound(TEXT("DeviceConnect"), NULL, SND_ALIAS | SND_ASYNC);
+
+                // Re-try Auto-Start?
+                if(g_reader->AutoStartEnabled())
+                {
+                    console_log("AutoStart Enabled. Looking for %s ...\n\n", g_reader->GetGameExe().c_str());
+                    _autoStartStarted = true;
+                    std::thread autoStart(_AutoStart);
+                    autoStart.detach();
+                }
             }
 
             Sleep(300);
@@ -521,7 +592,6 @@ static void showInfo()
     console_log("  (Very useful, if you search the Convergence and Separation for a new game)!\n");
     console_log("- You can edit the \"3DVision_CM_Unleshed.ini\" file in real-time.\n");
     console_log("- Press \"CTRL + SHIFT + F10\" to reload the \"3DVision_CM_Unleshed.ini\" file and use the new key shortcuts!\n");
-    console_log("  (This will reload ONLY the \"[Key_Settings]\" section from \"3DVision_CM_Unleshed.ini\" file).\n");
     console_log("\n");
     console_log("- Press \"CTRL + SHIFT + T\" again to disable the tool!\n");
     console_log("  (This will remove the driver modifications and restore it to default).\n");
@@ -641,14 +711,14 @@ int main()
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
     CSplashWnd splash;
     splash.Show();
-    Sleep(4000);
+    //Sleep(4000);
     splash.Hide();
     GdiplusShutdown(gdiplusToken);
 
     // Setup the profile if requireds
     if(g_reader->UpdateCMProfile())
     {
-        _profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
+        _profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
         if(!_profileUpdateOK)
         {
             PlaySound(TEXT("CriticalStop"), NULL, SND_ALIAS | SND_ASYNC);
@@ -668,6 +738,7 @@ int main()
     // Auto-Start
     if(g_reader->AutoStartEnabled())
     {
+        _autoStartStarted = true;
         std::thread autoStart(_AutoStart);
         autoStart.detach();
     }

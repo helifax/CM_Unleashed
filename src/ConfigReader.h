@@ -133,6 +133,12 @@ public:
     }
     // ---------------------------------------------------------------------------------------------
 
+    uint32_t GetStereoTexture()
+    {
+        return _stereoTexture;
+    }
+    // ---------------------------------------------------------------------------------------------
+
     uint32_t GetCMProfile()
     {
         return _cm_Profile;
@@ -157,10 +163,11 @@ private:
 
 private:
     std::vector<ALT_KEYS_T> _altKeys;
-    std::string _gameExe;
+    std::string _gameExe = "";
     bool _autoStart = false;
 
     bool _enableNvapiProfileUpdate = false;
+    uint32_t _stereoTexture = 1;
     uint32_t _cm_Profile = 0;
     uint32_t _cm_Convergence = 0;
     std::string _cm_Comments = "";

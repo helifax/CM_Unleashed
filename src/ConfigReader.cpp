@@ -33,12 +33,10 @@ ConfigReader::ConfigReader()
         while(getline(configFile, configLine))
         {
             //----------------------------------------------
-            // Find the log information
-            if(configLine.find("[General]") != std::string::npos)
+            //[General]
             {
-                while((configLine.find("GameExecutable") == std::string::npos))
+                if((configLine.find("GameExecutable") != std::string::npos) && (configLine.find(";") == std::string::npos))
                 {
-                    getline(configFile, configLine);
                     if(configLine.find("=") != std::string::npos)
                     {
                         size_t position = configLine.find("=");
@@ -47,9 +45,8 @@ ConfigReader::ConfigReader()
                         _gameExe = gameExe.substr(0, gameExe.length() - 1);
                     }
                 }
-                while((configLine.find("AutoStart")) == std::string::npos)
+                if((configLine.find("AutoStart") != std::string::npos) && (configLine.find(";") == std::string::npos))
                 {
-                    getline(configFile, configLine);
                     if(configLine.find("true") != std::string::npos)
                     {
                         _autoStart = true;
@@ -59,9 +56,8 @@ ConfigReader::ConfigReader()
                         _autoStart = false;
                     }
                 }
-                while((configLine.find("2DDEnableUpdates")) == std::string::npos)
+                if((configLine.find("2DDEnableUpdates") != std::string::npos) && (configLine.find(";") == std::string::npos))
                 {
-                    getline(configFile, configLine);
                     if(configLine.find("true") != std::string::npos)
                     {
                         _enableNvapiProfileUpdate = true;
@@ -74,9 +70,20 @@ ConfigReader::ConfigReader()
                 // only if enabled
                 if(_enableNvapiProfileUpdate)
                 {
-                    while((configLine.find("2DDHUDSettings")) == std::string::npos)
+                    if((configLine.find("StereoTexture") != std::string::npos) && (configLine.find(";") == std::string::npos))
                     {
-                        getline(configFile, configLine);
+                        if(configLine.find("StereoTexture") != std::string::npos)
+                        {
+                            size_t position = configLine.find("=");
+                            std::string value = configLine.substr(position + 1);
+                            std::stringstream dwordStream;
+                            dwordStream << value;
+                            dwordStream >> std::hex >> _stereoTexture;
+                        }
+                    }
+
+                    if((configLine.find("2DDHUDSettings") != std::string::npos) && (configLine.find(";") == std::string::npos))
+                    {
                         if(configLine.find("2DDHUDSettings") != std::string::npos)
                         {
                             size_t position = configLine.find("=");
@@ -86,9 +93,8 @@ ConfigReader::ConfigReader()
                             dwordStream >> std::hex >> _cm_Profile;
                         }
                     }
-                    while((configLine.find("2DDConvergence")) == std::string::npos)
+                    if((configLine.find("2DDConvergence") != std::string::npos) && (configLine.find(";") == std::string::npos))
                     {
-                        getline(configFile, configLine);
                         if(configLine.find("2DDConvergence") != std::string::npos)
                         {
                             union {
@@ -102,9 +108,8 @@ ConfigReader::ConfigReader()
                             _cm_Convergence = bits.i;
                         }
                     }
-                    while((configLine.find("2DD_Notes")) == std::string::npos)
+                    if((configLine.find("2DD_Notes") != std::string::npos) && (configLine.find(";") == std::string::npos))
                     {
-                        getline(configFile, configLine);
                         if(configLine.find("2DD_Notes") != std::string::npos)
                         {
                             size_t position = configLine.find("=");

@@ -932,7 +932,10 @@ bool CMUnleashed ::RestoreOriginal(std::string &gameExeName)
         CloseHandle(p);
         return true;
     }
-    console_log("!!! Could not Restore the Original Code !!!\n");
+    else
+    {
+        console_log("Application has exited! Nothing to restore!\n");
+    }
     console_log("-------------------------------------------------------------------\n\n");
     return false;
 }

@@ -31,6 +31,7 @@ extern void __cdecl console_log(const char* fmt, ...);
 #define CM_2DD_DISABLE 0x709ADADD
 
 static std::string m_gameExe = "";
+static uint32_t m_stereoTexture = 0;
 static uint32_t m_profileValue = 0;
 static uint32_t m_convergenceValue = 0;
 static std::string m_comments = "";
@@ -55,9 +56,10 @@ static void PrintError(NvAPI_Status status)
 ///--------------------------------------------------------------------------------------
 
 // Enumerate profiles and find the current profile for the .exe
-bool NvApi_3DVisionProfileSetup(std::string gameExe, uint32_t profileValue, uint32_t convergenceValue, std::string comments)
+bool NvApi_3DVisionProfileSetup(std::string gameExe, uint32_t stereoTexture, uint32_t profileValue, uint32_t convergenceValue, std::string comments)
 {
     m_gameExe = gameExe;
+    m_stereoTexture = stereoTexture;
     m_profileValue = profileValue;
     m_convergenceValue = convergenceValue;
     m_comments = comments;
@@ -336,11 +338,14 @@ static bool NvApi_ApplyProfileSettings(NvDRSSessionHandle hSession, NvDRSProfile
     status = NvAPI_DRS_SetSetting(hSession, hProfile, &setNewSettings);
 
     // Stereo Texture. Disable 3D Vision Automatic Heuristics
-    setNewSettings.version = NVDRS_SETTING_VER;
-    setNewSettings.settingId = STEREO_TEXTURE;
-    setNewSettings.settingType = NVDRS_DWORD_TYPE;
-    setNewSettings.u32CurrentValue = 0x00000000;
-    status = NvAPI_DRS_SetSetting(hSession, hProfile, &setNewSettings);
+    if(m_stereoTexture)
+    {
+        setNewSettings.version = NVDRS_SETTING_VER;
+        setNewSettings.settingId = STEREO_TEXTURE;
+        setNewSettings.settingType = NVDRS_DWORD_TYPE;
+        setNewSettings.u32CurrentValue = m_stereoTexture;
+        status = NvAPI_DRS_SetSetting(hSession, hProfile, &setNewSettings);
+    }
 
     if(m_profileValue)
     {

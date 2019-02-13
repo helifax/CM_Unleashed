@@ -31,6 +31,17 @@ public:
     bool CM_SetConvergence(float *newValue);
     bool CM_GetConvergence(float *newValue);
 
+    // Update the PID
+    void UpdateExePid(DWORD newPid)
+    {
+        _exePid = newPid;
+    }
+
+    DWORD GetExePid(void)
+    {
+        return _exePid;
+    }
+
 private:
     // No copy
     CMUnleashed(const CMUnleashed &);
