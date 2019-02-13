@@ -503,7 +503,7 @@ static void showIntroMenu()
     console_log("| - Windows 7 and above (x64 only) -                                |\n");
     console_log("--------------------------------------------------------------------\n");
     console_log("(Always \"RUN AS ADMIN\" !)\n");
-    console_log("(Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, in CM, for BEST RESULTS!)\n");
+    console_log("(Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!)\n");
     console_log("(To refresh this Console Window press \"SPACE\" followed by \"ENTER\".)\n\n");
 
     if(g_reader->UpdateCMProfile())
