@@ -8,6 +8,8 @@
 #include <Windows.h>
 #include <sstream>
 #include <string>
+#include <vector>
+#include <algorithm>
 #include <TlHelp32.h>
 #include <thread>
 #include "Psapi.h"
@@ -21,9 +23,9 @@ public:
     CMUnleashed();
     ~CMUnleashed();
 
-    DWORD getPid(std::string &_process);
+    DWORD getPid(const std::string &_process);
 
-    bool DoPatching(std::string &gameExeName);
+    bool DoPatching(const std::string &gameExeName);
     bool RestoreOriginal(std::string &gameExeName);
 
     bool CM_SetSeparationFactor(float *factor);
@@ -47,17 +49,17 @@ private:
     CMUnleashed(const CMUnleashed &);
     CMUnleashed &operator=(const CMUnleashed &);
 
-    DWORD64 getModuleBaseAddress(std::string &moduleName);
-    DWORD64 findSignature(DWORD64 startOffset, std::string &pattern);
-    std::string getHexOPCodesFromString(std::string &_input);
+    // Not actually useful, except to see if Module is in PID
+    DWORD64 getModuleBaseAddress(const std::string &moduleName);
+    DWORD64 findSignature(const std::string &moduleName, const std::vector<BYTE> &bytes_to_find);
 
     // 32 bit
-    bool injectCodeCaveSeparation32(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode);
-    bool injectCodeCaveConvergence32(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode);
+    bool injectCodeCaveSeparation32(const DWORD64 baseAddress, DWORD64 const signatureAddress, const std::string &shellcode);
+    bool injectCodeCaveConvergence32(const DWORD64 baseAddress, DWORD64 const signatureAddress, const std::string &shellcode);
 
     // 64 bit
-    bool injectCodeCaveSeparation64(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode);
-    bool injectCodeCaveConvergence64(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode);
+    bool injectCodeCaveSeparation64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode);
+    bool injectCodeCaveConvergence64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode);
 
     // We don't expose the actual Separation
     // Instead we expose the factor currently applied!
@@ -68,6 +70,7 @@ private:
     void *newCodeCoveSeparation = nullptr;
     void *newSeparation = nullptr;
     void *prevSeparation = nullptr;
+    void *jumpBackSeparation = nullptr;
 
     void *newCodeCoveConvergence = nullptr;
     void *crtConvergence = nullptr;
@@ -77,7 +80,6 @@ private:
     float _separationFactor = 0.0f;
     float _origSeparation = 0.0f;
 
-    DWORD64 _max_address_to_scan = 0;
     uint8_t _originalSeparationCode[8] = { 0 };
     uint8_t _originalConvergenceCode[8] = { 0 };
     DWORD64 _signatureSeparationAddress = 0;

@@ -15,20 +15,20 @@ extern void __cdecl console_log(const char *fmt, ...);
 const std::string m_jumpToCodeCave = std::string("\xE9\xAA\xAA\xAA\xAA\x90\x90\x90", 8);
 
 //32 bit variant
-std::string m_moduleName32 = "nvwgf2um.dll";
-std::string m_signatureSeparation32 = "F3 0F 10 80 ?? ?? ?? ?? 0F 2E 46";
-std::string m_signatureConvergence32 = "F3 0F 10 86 ?? ?? ?? ?? 0F 2E 46";
-std::string m_shellcodeSeparation32 = std::string(
+const std::string m_moduleName32 = "nvwgf2um.dll";
+const std::vector<BYTE> m_signatureSeparation32{ 0xF3, 0x0F, 0x10, 0x80, '?', '?', '?', '?', 0x0F, 0x2E, 0x46 };
+const std::vector<BYTE> m_signatureConvergence32{ 0xF3, 0x0F, 0x10, 0x86, '?', '?', '?', '?', 0x0F, 0x2E, 0x46 };
+const std::string m_shellcodeSeparation32 = std::string(
     "\x53\x51\x8B\x1D\xAA\xAA\xAA\xAA\x83\xFB\x00\x0F\x84\x14\x00\x00\x00\x8B\x0D\xBB\xBB\xBB\xBB\x39\xCB\x0F\x85\x2E\x00\x00\x00\x0F\x84\x19\x00\x00\x00\x52\x8B\x90\xDD\xDD\xDD\xDD\x89\x15\xAA\xAA\xAA\xAA\x89\x15\xBB\xBB\xBB\xBB\x5A\xE9\x00\x00\x00\x00\x59\x5B\xF3\x0F\x10\x80\xDD\xDD\xDD\xDD\xE9\xCC\xCC\xCC\xCC\x59\x5B\x53\x8B\x1D\xAA\xAA\xAA\xAA\x89\x1D\xBB\xBB\xBB\xBB\x89\x98\xDD\xDD\xDD\xDD\x5B\xF3\x0F\x10\x80\xDD\xDD\xDD\xDD",
     107);
-std::string m_shellcodeConvergence32 = std::string(
+const std::string m_shellcodeConvergence32 = std::string(
     "\x50\x51\xA1\xAA\xAA\xAA\xAA\x83\xF8\x00\x0F\x84\x28\x00\x00\x00\x8B\x0D\xBB\xBB\xBB\xBB\x39\xC8\x0F\x85\x36\x00\x00\x00\x0F\x84\x14\x00\x00\x00\x52\x8B\x96\xDD\xDD\xDD\xDD\x89\x15\xAA\xAA\xAA\xAA\x89\x15\xBB\xBB\xBB\xBB\x5A\x59\x58\xF3\x0F\x10\x86\xDD\xDD\xDD\xDD\x50\x8B\x86\xDD\xDD\xDD\xDD\xA3\xCC\xCC\xCC\xCC\x58\xE9\xEE\xEE\xEE\xEE\x59\x58\x50\xA1\xAA\xAA\xAA\xAA\xA3\xBB\xBB\xBB\xBB\x89\x86\xDD\xDD\xDD\xDD\x58\xF3\x0F\x10\x86\xDD\xDD\xDD\xDD",
     112);
 
 // 64 bit variant
-std::string m_moduleName64 = "nvwgf2umx.dll";
-std::string m_signatureSeparation64 = "F3 0F 10 80 ?? ?? ?? ?? 0F 2E 43";
-std::string m_signatureConvergence64 = "F3 0F 10 83 ?? ?? ?? ?? 0F 2E 43";
+const std::string m_moduleName64 = "nvwgf2umx.dll";
+const std::vector<BYTE> m_signatureSeparation64{ 0xF3, 0x0F, 0x10, 0x80, '?', '?', '?', '?', 0x0F, 0x2E, 0x43 };
+const std::vector<BYTE> m_signatureConvergence64{ 0xF3, 0x0F, 0x10, 0x83, '?', '?', '?', '?', 0x0F, 0x2E, 0x43 };
 std::string m_shellcodeSeparation64 = std::string(
     "\x53\x51\x48\x8B\x1D\xAA\xAA\xAA\xAA\x48\x83\xFB\x00\x74\x1A\x90\x90\x90\x90\x48\x8B\x0D\xBB\xBB\xBB\xBB\x48\x39\xCB\x75\x47\x90\x90\x90\x90\x74\x29\x90\x90\x90\x90\x52\x48\x8B\x90\xCC\xCC\xCC\xCC\x48\x89\x15\xAA\xAA\xAA\xAA\x48\x89\x15\xBB\xBB\xBB\xBB\x5A\xEB\x0C\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x59\x5B\xF3\x0F\x10\x80\xCC\xCC\xCC\xCC\xE9\x99\x99\x99\x99\x90\x90\x90\x90\x90\x90\x90\x90\x90\x59\x5B\x53\x48\x8B\x1D\xAA\xAA\xAA\xAA\x48\x89\x1D\xBB\xBB\xBB\xBB\x48\x89\x98\xCC\xCC\xCC\xCC\x5B\xF3\x0F\x10\x80\xCC\xCC\xCC\xCC",
     135);
@@ -47,7 +47,7 @@ CMUnleashed::~CMUnleashed()
 }
 //-----------------------------------------------------------------------------
 
-DWORD CMUnleashed::getPid(std::string &_process)
+DWORD CMUnleashed::getPid(const std::string &_process)
 {
     HANDLE hsnap;
     PROCESSENTRY32 pt;
@@ -76,7 +76,7 @@ DWORD CMUnleashed::getPid(std::string &_process)
 }
 //-----------------------------------------------------------------------------
 
-DWORD64 CMUnleashed::getModuleBaseAddress(std::string &moduleName)
+DWORD64 CMUnleashed::getModuleBaseAddress(const std::string &moduleName)
 {
     HMODULE *hModules;
     char szBuf[50];
@@ -85,7 +85,7 @@ DWORD64 CMUnleashed::getModuleBaseAddress(std::string &moduleName)
     DWORD MODULE = 0;
 
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_ALL_ACCESS, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, _exePid);
     //------
     if(_is64Bit)
     {
@@ -110,7 +110,6 @@ DWORD64 CMUnleashed::getModuleBaseAddress(std::string &moduleName)
                     dwBase = (DWORD64)hModules[i];
                     MODULEINFO info = { 0 };
                     GetModuleInformation(p, hModules[i], &info, sizeof(MODULEINFO));
-                    _max_address_to_scan = dwBase + info.SizeOfImage;
                     break;
                 }
             }
@@ -125,7 +124,8 @@ DWORD64 CMUnleashed::getModuleBaseAddress(std::string &moduleName)
 //////////////////////////////////////////////////////////////////////////
 // THIS IS A VERY SLOW FUNCTION.
 // It's very pedantic, but correctness first!
-// Todo: Optimize this!!!
+// KEPT FOR REFERENCES!
+/*
 DWORD64 CMUnleashed::findSignature(DWORD64 startOffset, std::string &pattern)
 {
     // Get our process handle
@@ -213,11 +213,101 @@ std::string CMUnleashed::getHexOPCodesFromString(std::string &_input)
     return output;
 }
 //-----------------------------------------------------------------------------
+*/
 
-bool CMUnleashed::injectCodeCaveSeparation32(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode)
+DWORD64 CMUnleashed::findSignature(const std::string &moduleName, const std::vector<BYTE> &bytes_to_find)
 {
+    HMODULE *hModules;
+    char szBuf[50];
+    DWORD cModules = 4096;
+    DWORD64 dwBase = -1;
+    DWORD MODULE = 0;
+    DWORD64 address_found = 0x0;
+    bool isFound = false;
+    bool isModuleFound = false;
+
     // Get our process handle
     HANDLE p = OpenProcess(PROCESS_ALL_ACCESS, 0, _exePid);
+    //------
+    if(_is64Bit)
+    {
+        MODULE = LIST_MODULES_64BIT;
+    }
+    else
+    {
+        MODULE = LIST_MODULES_32BIT;
+    }
+
+    EnumProcessModulesEx(p, NULL, 0, &cModules, MODULE);
+    hModules = new HMODULE[cModules];
+
+    if(EnumProcessModulesEx(p, hModules, cModules, &cModules, MODULE))
+    {
+        for(unsigned int i = 0; i < cModules / sizeof(HMODULE); i++)
+        {
+            // Did we find the address of the module (and couldn't find the addres??)
+            if(isFound || (isModuleFound && !isFound))
+                break;
+
+            if(GetModuleBaseName(p, hModules[i], szBuf, sizeof(szBuf)) != 0)
+            {
+                if(moduleName.compare(szBuf) == 0)
+                {
+                    dwBase = (DWORD64)hModules[i];
+                    MODULEINFO info = { 0 };
+                    GetModuleInformation(p, hModules[i], &info, sizeof(MODULEINFO));
+
+                    // Start the memory search!
+                    MEMORY_BASIC_INFORMATION mbi{};
+                    BYTE *address = static_cast<BYTE *>(ADDRESS(dwBase));
+                    BYTE *address_high = address + info.SizeOfImage;
+
+                    while(address < address_high && VirtualQuery(address, std::addressof(mbi), sizeof(mbi)))
+                    {
+                        BYTE *memoryCopy = new BYTE[mbi.RegionSize];
+                        ReadProcessMemory(p, address, memoryCopy, mbi.RegionSize, nullptr);
+
+                        // The DLL that we are looking for has these properties :)
+                        if(mbi.State == MEM_FREE && mbi.Protect == PAGE_NOACCESS)
+                        {
+                            const BYTE *begin = static_cast<const BYTE *>(memoryCopy);
+                            const BYTE *end = begin + mbi.RegionSize;
+
+                            // Search based on our lambda function that accepts wildcards
+                            const BYTE *found = std::search(begin, end, bytes_to_find.begin(), bytes_to_find.end(),
+                                [](char fromText, char fromPattern) { return fromPattern == '?' || fromPattern == fromText; });
+
+                            if(found != end)
+                            {
+                                // We found the address
+                                DWORD64 offset = (DWORD64)found - (DWORD64)begin;
+                                address_found = (DWORD64)mbi.BaseAddress + offset;
+                                isFound = true;
+                                delete[] memoryCopy;
+                                break;
+                            }
+                            delete[] memoryCopy;
+                        }
+                        address += mbi.RegionSize;
+                        mbi = {};
+                    }
+
+                    // We found the module but not the address if we get here!
+                    isModuleFound = true;
+                }
+            }
+        }
+    }
+    delete[] hModules;
+    CloseHandle(p);
+    return address_found;
+}
+//-----------------------------------------------------------------------------
+
+bool CMUnleashed::injectCodeCaveSeparation32(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
+{
+    // Get our process handle
+    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -334,10 +424,10 @@ bool CMUnleashed::injectCodeCaveSeparation32(DWORD64 baseAddress, DWORD64 signat
 }
 //-----------------------------------------------------------------------------
 
-bool CMUnleashed::injectCodeCaveConvergence32(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode)
+bool CMUnleashed::injectCodeCaveConvergence32(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_ALL_ACCESS, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -458,10 +548,10 @@ bool CMUnleashed::injectCodeCaveConvergence32(DWORD64 baseAddress, DWORD64 signa
 }
 //-----------------------------------------------------------------------------
 
-bool CMUnleashed::injectCodeCaveSeparation64(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode)
+bool CMUnleashed::injectCodeCaveSeparation64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_ALL_ACCESS, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -496,9 +586,10 @@ bool CMUnleashed::injectCodeCaveSeparation64(DWORD64 baseAddress, DWORD64 signat
                     break;
                 }
             }
-            //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
-            // Find a spot as close as possible in the memory range!
+            // WHY?!?!
             memoryRegionStart += 4096;
+            // This doesn't work! It seems we allocate WAAAAY to far (outside the 32-bit jump)
+            //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
         if(newCodeCoveSeparation)
@@ -570,6 +661,7 @@ bool CMUnleashed::injectCodeCaveSeparation64(DWORD64 baseAddress, DWORD64 signat
                 WriteProcessMemory(p, ADDRESS(tempAddress), m_jumpToCodeCave.c_str(), m_jumpToCodeCave.length(), NULL);
 
                 /// Now Write the memory address where the code-cave was allocated
+                //DWORD64 jumpAddress = DWORD64(newCodeCoveSeparation) - signatureAddress - (/*A jump is always 5bytes */ 0x05);
                 DWORD64 jumpAddress = DWORD64(newCodeCoveSeparation) - signatureAddress - (/*A jump is always 5bytes */ 0x05);
                 WriteProcessMemory(p, ADDRESS((DWORD64)tempAddress + 1), &jumpAddress, 4, NULL);
 
@@ -590,10 +682,10 @@ bool CMUnleashed::injectCodeCaveSeparation64(DWORD64 baseAddress, DWORD64 signat
 }
 //-----------------------------------------------------------------------------
 
-bool CMUnleashed::injectCodeCaveConvergence64(DWORD64 baseAddress, DWORD64 signatureAddress, std::string &shellcode)
+bool CMUnleashed::injectCodeCaveConvergence64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_ALL_ACCESS, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -632,10 +724,10 @@ bool CMUnleashed::injectCodeCaveConvergence64(DWORD64 baseAddress, DWORD64 signa
                     break;
                 }
             }
-
-            //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
-            // Find a spot as close as possible in the memory range!
+            // WHY?!?!
             memoryRegionStart += 4096;
+            // This doesn't work! It seems we allocate WAAAAY to far (outside the 32-bit jump)
+            //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
         if(newCodeCoveConvergence)
@@ -725,7 +817,7 @@ bool CMUnleashed::injectCodeCaveConvergence64(DWORD64 baseAddress, DWORD64 signa
 }
 //-----------------------------------------------------------------------------
 
-bool CMUnleashed::DoPatching(std::string &gameExeName)
+bool CMUnleashed::DoPatching(const std::string &gameExeName)
 {
     // Get the module address from the EXE
     _exePid = getPid(gameExeName);
@@ -755,14 +847,11 @@ bool CMUnleashed::DoPatching(std::string &gameExeName)
     }
 
     // Separation Code Cave
-    std::string opCodes;
-    if(_is64Bit)
-        opCodes = getHexOPCodesFromString(m_signatureSeparation64);
-    else
-        opCodes = getHexOPCodesFromString(m_signatureSeparation32);
-
     console_log("Starting Signature Scanning for Separation Patch... (this might take a while)\n");
-    _signatureSeparationAddress = findSignature(baseAddress, opCodes);
+    if(_is64Bit)
+        _signatureSeparationAddress = findSignature(m_moduleName64, m_signatureSeparation64);
+    else
+        _signatureSeparationAddress = findSignature(m_moduleName32, m_signatureSeparation32);
 
     if(_signatureSeparationAddress)
     {
@@ -789,13 +878,11 @@ bool CMUnleashed::DoPatching(std::string &gameExeName)
     }
 
     // Convergence Code Cave
-    if(_is64Bit)
-        opCodes = getHexOPCodesFromString(m_signatureConvergence64);
-    else
-        opCodes = getHexOPCodesFromString(m_signatureConvergence32);
-
     console_log("Starting Signature Scanning for Convergence Patch... (this might take a while)\n");
-    _signatureConvergeAddress = findSignature(baseAddress, opCodes);
+    if(_is64Bit)
+        _signatureConvergeAddress = findSignature(m_moduleName64, m_signatureConvergence64);
+    else
+        _signatureConvergeAddress = findSignature(m_moduleName32, m_signatureConvergence32);
 
     if(_signatureConvergeAddress)
     {

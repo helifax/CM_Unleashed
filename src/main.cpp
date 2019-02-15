@@ -25,9 +25,9 @@ using namespace Gdiplus;
 #pragma comment(lib, "Gdiplus.lib")
 
 // Our Reader
-ConfigReader *g_reader = nullptr;
+ConfigReader* g_reader = nullptr;
 // Our Patcher
-CMUnleashed *g_cmUnleashed = nullptr;
+CMUnleashed* g_cmUnleashed = nullptr;
 
 static bool _keyThreadRunning = true;
 static bool _isPressAndHold = false;
@@ -48,7 +48,7 @@ static void _AutoStart();
 static void _KeyThread();
 
 // GLOBAL PRINT
-void __cdecl console_log(const char *fmt, ...)
+void __cdecl console_log(const char* fmt, ...)
 {
     const size_t MAX_SIZE = 500000;
     va_list va_alist;
@@ -68,11 +68,11 @@ static bool IsKeyDown(int keyCode);
 static bool IsAltKeyToggleKeyDown(int keyCodeIndex);
 
 // Xbox controller support
-static CXBOXController *g_xController = new CXBOXController(1);
+static CXBOXController* g_xController = new CXBOXController(1);
 static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex);
 //-----------------------------------------------------------------------------
 
-static void _Run_Keys_OneTime(size_t keyIndex, size_t &returnIndex)
+static void _Run_Keys_OneTime(size_t keyIndex, size_t& returnIndex)
 {
     // Toggled Enabled
     if(IsAltKeyToggleKeyDown((int)keyIndex) || IsXControllerAltKeyToggleKeyDown((int)keyIndex))
@@ -105,7 +105,7 @@ static void _Run_Keys_OneTime(size_t keyIndex, size_t &returnIndex)
 }
 //-----------------------------------------------------------------------------
 
-static void _Run_Keys_Hold(size_t keyIndex, size_t &returnIndex)
+static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
 {
     /////////////////////////////////////
     // Push to hold settings
@@ -166,7 +166,7 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t &returnIndex)
 }
 //-----------------------------------------------------------------------------
 
-static void _Run_Keys_Toggle(size_t keyIndex, size_t &returnIndex)
+static void _Run_Keys_Toggle(size_t keyIndex, size_t& returnIndex)
 {
     static float crtSep = 0;
     static float crtConv = 0;
