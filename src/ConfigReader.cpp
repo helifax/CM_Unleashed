@@ -8,6 +8,7 @@
 #include <fstream>
 #include <windows.h>
 #include "ConfigReader.h"
+#include "KeyParser.h"
 
 static std::string GetPath()
 {
@@ -190,7 +191,8 @@ void ConfigReader::AddAlternativeKey(std::string &configLine)
 
     // Read the key
     std::string temp = configLine.substr(startPoint + 1, middlePoint1 - startPoint - 1).c_str();
-    newKey.altKeyCode = std::stoul(temp, nullptr, 16);
+    newKey.altKeyCode = ParseVKey(temp.c_str());
+
     newKey.altSeparation = (float)atof(configLine.substr(middlePoint1 + 1, middlePoint2 - middlePoint1 - 1).c_str());
     newKey.altConvergence = (float)atof(configLine.substr(middlePoint2 + 1, middlePoint3 - middlePoint2 - 1).c_str());
     temp = (configLine.substr(middlePoint7 + 1, endPoint - middlePoint7 - 1).c_str());

@@ -50,8 +50,7 @@ private:
     CMUnleashed &operator=(const CMUnleashed &);
 
     // Not actually useful, except to see if Module is in PID
-    DWORD64 getModuleBaseAddress(const std::string &moduleName);
-    DWORD64 findSignature(const std::string &moduleName, const std::vector<BYTE> &bytes_to_find);
+    bool findSignature(const std::string _process, const std::string &moduleName, const std::vector<BYTE> &bytes_to_find, DWORD64 *baseAddress, DWORD64 *signatureAddress);
 
     // 32 bit
     bool injectCodeCaveSeparation32(const DWORD64 baseAddress, DWORD64 const signatureAddress, const std::string &shellcode);
@@ -64,6 +63,30 @@ private:
     // We don't expose the actual Separation
     // Instead we expose the factor currently applied!
     bool CM_GetActualSeparation(float *newValue);
+
+    void ResetMemoryLocations()
+    {
+        newCodeCoveSeparation = nullptr;
+        newSeparation = nullptr;
+        prevSeparation = nullptr;
+        jumpBackSeparation = nullptr;
+        newCodeCoveConvergence = nullptr;
+        crtConvergence = nullptr;
+        newConvergence = nullptr;
+        prevConvergence = nullptr;
+
+        _separationFactor = 0.0f;
+        _origSeparation = 0.0f;
+
+        _moduleBaseAddress = 0;
+        _signatureSeparationAddress = 0;
+        _signatureConvergeAddress = 0;
+
+        _exePid = 0;
+        _sepPatchDone = false;
+        _convPatchDone = false;
+        _is64Bit = false;
+    }
 
 private:
     // Addresses that we use!!!
@@ -82,6 +105,8 @@ private:
 
     uint8_t _originalSeparationCode[8] = { 0 };
     uint8_t _originalConvergenceCode[8] = { 0 };
+
+    DWORD64 _moduleBaseAddress = 0;
     DWORD64 _signatureSeparationAddress = 0;
     DWORD64 _signatureConvergeAddress = 0;
 

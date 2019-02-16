@@ -56,6 +56,9 @@
     <ClInclude Include="src\Resources\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\KeyParser.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\Resources\LogoDev.bmp">

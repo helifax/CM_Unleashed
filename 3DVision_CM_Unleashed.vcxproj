@@ -28,6 +28,7 @@
   <ItemGroup>
     <ClInclude Include="src\CMUnleashed.h" />
     <ClInclude Include="src\ConfigReader.h" />
+    <ClInclude Include="src\KeyParser.h" />
     <ClInclude Include="src\NvapiProfileSettings\NvApiProfileSettings.h" />
     <ClInclude Include="src\Resources\3DVision_CM_Unleashed.h" />
     <ClInclude Include="src\Resources\resource.h" />

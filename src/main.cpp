@@ -5,6 +5,7 @@
 
 #include <Windows.h>
 #include <sstream>
+#include <conio.h>
 #include <string>
 #include <TlHelp32.h>
 #include <thread>
@@ -415,6 +416,8 @@ static void _KeyThread()
                 console_log("!!! Can not get current Convergence !!!\n");
             console_log("-------------------------------------------------------------------\n\n");
 
+            PlaySound(TEXT("MessageNudge"), NULL, SND_ALIAS | SND_ASYNC);
+
             Sleep(300);
         }
         else if(IsKeyDown(VK_CONTROL) && IsKeyDown(VK_SHIFT) && IsKeyDown(VK_F10))
@@ -558,10 +561,12 @@ static void showIntroMenu()
     console_log("|                                                                   |\n");
     console_log("| Supports 32-bits(x86) and 64-bits(x64) Applications!              |\n");
     console_log("| - Windows 7 and above (x64 only) -                                |\n");
-    console_log("--------------------------------------------------------------------\n");
-    console_log("(Always \"RUN AS ADMIN\" !)\n");
-    console_log("(Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!)\n");
-    console_log("(To refresh this Console Window press \"SPACE\" followed by \"ENTER\".)\n\n");
+    console_log("--------------------------------------------------------------------\n\n");
+    console_log("Important:\n");
+    console_log("- Always \"RUN AS ADMIN\" !\n");
+    console_log("- Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!\n");
+    console_log("- To print this information again, press \"BACKSPACE\".\n");
+    console_log("-------------------------------------------------------------------\n\n");
 }
 //-----------------------------------------------------------------------------
 
@@ -573,8 +578,8 @@ static void showMenu()
     console_log("Options:\n");
     console_log("1. In-depth Instructions on how to use it.\n");
     console_log("2. Open \"3DVision_CM_Unleshed.ini\" file.\n");
-    console_log("3. Do you want to see screenshots? Or to discuss? Let's do it on GeForce Forums thread! (opens Web-page)\n");
-    console_log("4. Looking for an update? Check here! (opens Web-page)\n");
+    console_log("3. Looking for an update? Check here! (opens Web-page)\n");
+    console_log("4. Do you want to see screenshots? Or to discuss? Let's do it on GeForce Forums thread! (opens Web-page)\n");
     console_log("5. Quit.\n\n");
     console_log("Awaiting commands :)\n");
 }
@@ -585,54 +590,85 @@ static void showInfo()
     _mainMenu = false;
     _infoMenu = true;
     system("CLS");
-    console_log("\n");
-    console_log("-------------------------------------------------------------------\n");
-    console_log(" !!! If your game doesn't render in 3D Vision Compatibility Mode,\n");
-    console_log(" check the \"[General]\" section in \"3DVision_CM_Unleased.ini\" file,\n");
-    console_log(" on how to enable it !!!\n");
     console_log("-------------------------------------------------------------------\n");
     console_log("1. What does this tool do:\n\n");
-    console_log("- It Patches in Real-Time(Code Injection) the UDM Nvidia Driver responsible for 3D Vision Compatibility Mode\n  (Stereo Reprojection based on the Depth Buffer).\n");
-    console_log("- It removes the limit for Stereo Separation (Depth Override).\n");
-    console_log("- It adds key shortcuts to quickly jump from one Separation value to another.\n");
-    console_log("- It adds key shortcuts to quickly jump from one Convergence value to another.\n");
-    console_log("- It DOESN'T MODIFY the EXE of the application/game! (It should be safe, with Anti-Cheat programs)!\n");
+    console_log("- Patches in Real-Time(Code Injection) the UDM Nvidia Driver responsible for 3D Vision Compatibility Mode\n  (Stereo Reprojection based on the Depth Buffer).\n");
+    console_log("- Removes the limit for Stereo Separation (Depth Override).\n");
+    console_log("- Adds key shortcuts to quickly jump from one Separation value to another.\n");
+    console_log("- Adds key shortcuts to quickly jump from one Convergence value to another.\n");
+    console_log("- DOESN'T MODIFY the EXE of the application/game! (It should be safe, with Anti-Cheat programs)!\n");
     console_log("  (However, I still recommend being cautions, if you want to use it in online multiplayer games!)\n");
-    console_log("  It allows updating the 3D Vision Compatibility Profile (for the application/game).\n");
-    console_log("-------------------------------------------------------------------");
-    console_log("\n\n");
-    console_log("-------------------------------------------------------------------\n");
-    console_log("2. How to configure it:\n\n");
-    console_log("- Open \"3DVision_CM_Unleshed.ini\" file.\n");
-    console_log("- Change \"GameExecutable\" for the game EXE you want to play.\n");
-    console_log("  (Make sure there are no spaces and the name is in quotes: GameExecutable=\"re2.exe\").\n");
-    console_log("- Set \"AutoStart\" to true, if you want to attempt to automatically start the Patching once the EXE is detected!\n");
-    console_log("- Under \"[Key_Settings]\" add your shortcut keys.\n");
-    console_log("- (Read the examples in the \"3DVision_CM_Unleshed.ini\" file).\n");
+    console_log("  Allows updating the 3D Vision Compatibility Profile (for the application/game).\n");
     console_log("-------------------------------------------------------------------\n");
     console_log("\n");
+
+    // Simulates "Press any key to continue..." but without the text
+    _getch();
+
     console_log("-------------------------------------------------------------------\n");
-    console_log("3. How to use it:\n\n");
+    console_log("2. (Optional) Add or Update 3D Vision Compatibility Mode:\n\n");
+    console_log("   - Open \"3DVision_CM_Unleshed.ini\" file.\n");
+    console_log("   - Change \"GameExecutable\" for the game EXE you want to play.\n");
+    console_log("   - Enable \"2DDEnableUpdates\".\n");
+    console_log("   - Set \"StereoTexture\" value.\n");
+    console_log("   - Set \"2DDHUDSettings\" value.\n");
+    console_log("   - Set \"2DDConvergence\" value, if you wish. This is the default startup value for CM.\n");
+    console_log("   - Set \"2DD_Notes\" value, if you wish. It will be displayed in the Nvidia 3D Vision Overlay.\n");
+    console_log("   - (Read the comments in the \"3DVision_CM_Unleshed.ini\" file, for more info).\n");
+    console_log("-------------------------------------------------------------------\n");
+    console_log("\n");
+
+    _getch();
+
+    console_log("-------------------------------------------------------------------\n");
+    console_log("3. How to add your Custom Separation and Convergence:\n\n");
+    console_log("- Open \"3DVision_CM_Unleshed.ini\" file.\n");
+    console_log("- Change \"GameExecutable\" for the game EXE you want to play.\n");
+    console_log("  (Make sure there are no spaces and the name is in quotes: GameExecutable=\"re2.exe\").\n\n");
+    console_log("   - Optionally: (Set \"AutoStart\" to true, if you want to attempt to automatically start the Patching once the EXE is detected!)\n");
+    console_log("   - Optionally: (Set \"AutoStartDelay\" to a value (in seconds), that it takes your game from starting the EXE until it renders.)\n\n");
+    console_log("- Under \"[Key_Settings]\" add your shortcut keys using this pattern:\n\n");
+    console_log("   - \"NewKey(key_code, separation, convergence, type)\".\n");
+    console_log("- (See the examples and documentation in the \"3DVision_CM_Unleshed.ini\" file).\n");
+    console_log("-------------------------------------------------------------------\n");
+    console_log("\n");
+
+    _getch();
+
+    console_log("-------------------------------------------------------------------\n");
+    console_log("4. How to use it:\n\n");
     console_log("- Start this tool and leave it running (in the background).\n");
-    console_log("- Start your game and WAIT till 3D Vision Compability Mode starts!\n");
+    console_log("- Start your game and WAIT till 3D Vision Compatibility Mode starts!\n");
     console_log("- Press \"CTRL + SHIFT + T\" to enable the tool!\n");
     console_log("  (This will Patch the driver and allow the keys to work).\n");
     console_log("  (You will hear the \"Plug\" sound for each fix that is applied,\n   followed by the \"TADA\" sound when everything is ready).\n");
     console_log("- Use the keys set (for Convergence and Separation) in the \"3DVision_CM_Unleshed.ini\" file and:\n\n");
+
+    _getch();
     console_log("-------------------------------------------------------------------\n");
     console_log("                    ENJOY \"UNLEASHED\" MODE!\n");
     console_log("-------------------------------------------------------------------\n");
+    _getch();
+
     console_log("\n");
     console_log("- You can modify the Convergence and Separation values, by using the Nvidia Shortcut keys.\n");
     console_log("- Press \"CTRL + SHIFT + HOME\" to print the current Separation Percentage & Convergence the driver is using.\n");
     console_log("  (Very useful, if you search the Convergence and Separation for a new game)!\n");
     console_log("- You can edit the \"3DVision_CM_Unleshed.ini\" file in real-time.\n");
     console_log("- Press \"CTRL + SHIFT + F10\" to reload the \"3DVision_CM_Unleshed.ini\" file and use the new key shortcuts!\n");
+
+    _getch();
+
     console_log("\n");
     console_log("- Press \"CTRL + SHIFT + T\" again to disable the tool!\n");
     console_log("  (This will remove the driver modifications and restore it to default).\n");
     console_log("  (You will hear the \"Unplug\" sound if the operation succeeded).\n");
-    console_log("-------------------------------------------------------------------\n\n");
+    console_log("-------------------------------------------------------------------\n");
+    console_log("\n");
+
+    _getch();
+
+    console_log("\n");
     console_log("Options:\n");
     console_log("1. Go back to Main Menu.\n");
 }
@@ -641,10 +677,9 @@ static void showInfo()
 static void menukeyHandler()
 {
     char key;
-    static bool ignoreReturn = false;
     do
     {
-        key = getchar();
+        key = _getch();
         switch(key)
         {
             // 1 key
@@ -654,51 +689,53 @@ static void menukeyHandler()
                 showInfo();
             else
                 showMenu();
-            ignoreReturn = true;
         }
         break;
             // 2 key
         case 0x32:
         {
-            system("start 3DVision_CM_Unleased.ini");
-            console_log("");
-            ignoreReturn = true;
+            if(_mainMenu)
+            {
+                system("start 3DVision_CM_Unleased.ini");
+            }
         }
         break;
             // 3 key
         case 0x33:
         {
-            ShellExecute(0, 0, "https://forums.geforce.com/default/topic/1097032/3d-vision/3d-vision-compatibility-mode-quot-unleashed-quot-/", 0, 0, SW_SHOW);
-            console_log("");
-            ignoreReturn = true;
+            if(_mainMenu)
+            {
+                ShellExecute(0, 0, "http://3dsurroundgaming.com/CMUnleashed.html", 0, 0, SW_SHOW);
+            }
         }
         break;
             // 4 key
         case 0x34:
         {
-            ShellExecute(0, 0, "http://3dsurroundgaming.com/", 0, 0, SW_SHOW);
-            console_log("");
-            ignoreReturn = true;
+            if(_mainMenu)
+            {
+                ShellExecute(0, 0, "https://forums.geforce.com/default/topic/1097032/3d-vision/3d-vision-compatibility-mode-quot-unleashed-quot-/", 0, 0, SW_SHOW);
+            }
         }
         break;
 
-        case VK_SPACE:
+        case VK_BACK:
         {
             showMenu();
-            ignoreReturn = true;
         }
         break;
 
         default:
-            if((key != VK_SPACE) && (key == 10) && !ignoreReturn)
-                console_log("Unknown command?!\n");
-            ignoreReturn = false;
+            //if(key != VK_BACK || key != VK_HOME || key != 'T' || key != VK_F10)
+            //console_log("Unknown command?!\n");
             break;
         }
         // 5 key.
-    } while((key != 0x35));
+    } while((key != 0x35) || _infoMenu);
 
+    printf("\n-------------------\n");
     printf("Have a nice day! :)\n");
+    printf("-------------------\n");
     Sleep(2000);
 }
 ///-------------------------------------------------------------------------------------------
@@ -706,10 +743,9 @@ static void menukeyHandler()
 int main()
 {
     // Console SETUP
-    HWND console = GetConsoleWindow();
-    ShowWindow(console, SW_HIDE);
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
     RECT consoleRect;
-    GetWindowRect(console, &consoleRect);
+    GetWindowRect(GetConsoleWindow(), &consoleRect);
 
     // Desktop handle and RECT
     HWND desktopHandle = GetDesktopWindow();
@@ -721,7 +757,7 @@ int main()
     consoleRect.bottom = 640;
     consoleRect.left = windowRect.right / 2 - consoleRect.right / 2 - 150;
     consoleRect.top = windowRect.bottom / 2 - consoleRect.bottom / 2 - 65;
-    MoveWindow(console, consoleRect.left, consoleRect.top, consoleRect.right, consoleRect.bottom, TRUE);
+    MoveWindow(GetConsoleWindow(), consoleRect.left, consoleRect.top, consoleRect.right, consoleRect.bottom, TRUE);
 
     // Console Font Size
     CONSOLE_FONT_INFOEX cfi;
@@ -755,7 +791,7 @@ int main()
     showIntroMenu();
 
     // Show the console
-    ShowWindow(console, SW_SHOW);
+    ShowWindow(GetConsoleWindow(), SW_SHOW);
 
     // Start our Key handling thread
     std::thread keyThread(_KeyThread);
