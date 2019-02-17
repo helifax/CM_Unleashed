@@ -25,11 +25,48 @@ typedef struct
     ALT_KEYS_MODE_T keyMode;
 } ALT_KEYS_T;
 
+// Profile Reader
+class ProfileLoader
+{
+public:
+    ProfileLoader();
+    ~ProfileLoader()
+    {
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    void SetCurrentProfileName(std::string profileName)
+    {
+        _currentProfile = profileName;
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    std::string GetCurrentProfile()
+    {
+        return _currentProfile;
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    std::vector<std::string> GetAllProfiles()
+    {
+        return _allProfiles;
+    }
+    // ---------------------------------------------------------------------------------------------
+
+private:
+    std::vector<std::string> get_all_files_names_within_folder(std::string folder);
+
+private:
+    std::string _currentProfile = "";
+    std::vector<std::string> _allProfiles;
+};
+// ---------------------------------------------------------------------------------------------
+
 class ConfigReader
 {
 public:
     //ctor
-    ConfigReader();
+    ConfigReader(std::string _profileToLoad);
     ~ConfigReader()
     {
     }

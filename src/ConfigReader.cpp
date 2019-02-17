@@ -19,10 +19,41 @@ static std::string GetPath()
 }
 // -----------------------------------------------------------------------------------
 
-ConfigReader::ConfigReader()
+ProfileLoader::ProfileLoader()
+{
+    // grab all profiles
+    std::string profileFolder = GetPath() + "\\Profiles\\";
+    _allProfiles = get_all_files_names_within_folder(profileFolder);
+}
+// -----------------------------------------------------------------------------------
+
+std::vector<std::string> ProfileLoader::get_all_files_names_within_folder(std::string folder)
+{
+    std::vector<std::string> names;
+    std::string search_path = folder + "/*.ini";
+    WIN32_FIND_DATA fd;
+    HANDLE hFind = ::FindFirstFile(search_path.c_str(), &fd);
+    if(hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            // read all (real) files in current folder
+            // , delete '!' read other 2 default folder . and ..
+            if(!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                names.push_back(fd.cFileName);
+            }
+        } while(::FindNextFile(hFind, &fd));
+        ::FindClose(hFind);
+    }
+    return names;
+}
+// -----------------------------------------------------------------------------------
+
+ConfigReader::ConfigReader(std::string _profileToLoad)
 {
     _gameExe = "";
-    std::string configFileName = GetPath() + "/3DVision_CM_Unleased.ini";
+    std::string configFileName = GetPath() + "\\Profiles\\" + _profileToLoad;
     std::ifstream configFile(configFileName);
     std::string configLine;
 
@@ -141,7 +172,7 @@ ConfigReader::ConfigReader()
 
 void ConfigReader::ReadKeySettings()
 {
-    std::string configFileName = GetPath() + "/3DVision_CM_Unleased.ini";
+    std::string configFileName = GetPath() + "/3DVision_CM_Unleashed.ini";
     std::ifstream configFile(configFileName);
     std::string configLine;
 

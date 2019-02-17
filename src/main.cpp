@@ -3,6 +3,7 @@
 * Copyright (c) Helifax 2019
 */
 
+#include <iostream>
 #include <Windows.h>
 #include <sstream>
 #include <conio.h>
@@ -25,6 +26,8 @@
 using namespace Gdiplus;
 #pragma comment(lib, "Gdiplus.lib")
 
+// Our Profile Manager
+ProfileLoader* g_profiles = nullptr;
 // Our Reader
 ConfigReader* g_reader = nullptr;
 // Our Patcher
@@ -85,7 +88,7 @@ void __cdecl add_to_log(const char* fmt, ...)
     va_end(va_alist);
 
     std::string path = GetPath();
-    path += "/3DVision_CM_Unleased.log";
+    path += "/3DVision_CM_Unleashed.log";
 
     errno_t err;
     FILE* fp;
@@ -512,7 +515,7 @@ static void _KeyThread()
                     Sleep(100);
 
                 delete g_reader;
-                g_reader = new ConfigReader();
+                g_reader = new ConfigReader(g_profiles->GetCurrentProfile());
                 _manuallyDisabled = false;
                 PlaySound(TEXT("DeviceConnect"), NULL, SND_ALIAS | SND_ASYNC);
 
@@ -623,7 +626,7 @@ static void showIntroMenu()
     console_log("\n");
     console_log("---------------------------------------------------------------------\n");
     console_log("| Welcome to 3D Vision Compatibility Mode \"Unleashed\"!              |\n");
-    console_log("| Ver: 1.0.12                                                       |\n");
+    console_log("| Ver: 1.0.14                                                       |\n");
     console_log("| Developed by: Helifax (2019)                                      |\n");
     console_log("| If you would like to donate you can do it at: tavyhome@gmail.com  |\n");
     console_log("|                                                                   |\n");
@@ -635,6 +638,18 @@ static void showIntroMenu()
     console_log("- Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!\n");
     console_log("- To print this information again, press \"BACKSPACE\".\n");
     console_log("-------------------------------------------------------------------\n\n");
+}
+//-----------------------------------------------------------------------------
+
+static void showProfileSelection()
+{
+    std::vector<std::string> allProfiles = g_profiles->GetAllProfiles();
+    console_log("Please select one of the following Profiles:\n\n");
+
+    for(auto idx = 0; idx < allProfiles.size(); idx++)
+    {
+        console_log("%d. %s\n", idx, allProfiles[idx].c_str());
+    }
 }
 //-----------------------------------------------------------------------------
 
@@ -764,7 +779,7 @@ static void menukeyHandler()
         {
             if(_mainMenu)
             {
-                system("start 3DVision_CM_Unleased.ini");
+                system("start 3DVision_CM_Unleashed.ini");
             }
         }
         break;
@@ -806,7 +821,38 @@ static void menukeyHandler()
     printf("-------------------\n");
     Sleep(2000);
 }
-///-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+
+static void profileKeyHandler()
+{
+    char key;
+    bool stop = false;
+    std::vector<std::string> allProfiles = g_profiles->GetAllProfiles();
+    int profileNumber;
+
+    while(!stop)
+    {
+        if(allProfiles.size() == 0)
+        {
+            console_log("No profiles found in \"Profiles\" folder!\n\n");
+            Sleep(1000);
+        }
+
+        std::cin >> profileNumber;
+        if(profileNumber < allProfiles.size())
+        {
+            g_profiles->SetCurrentProfileName(allProfiles[profileNumber]);
+            stop = true;
+            console_log("Loading Profile: %s", g_profiles->GetCurrentProfile().c_str());
+            Sleep(1000);
+        }
+        else
+        {
+            console_log("%d is not a valid Profile number. Please try again!\n", profileNumber);
+        }
+    }
+}
+//-------------------------------------------------------------------------------------------
 
 int main()
 {
@@ -841,10 +887,6 @@ int main()
     // Console Colour
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
 
-    // Our Reader and Patcher
-    g_reader = new ConfigReader();
-    g_cmUnleashed = new CMUnleashed();
-
     // Our splash screen!
     GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
@@ -860,6 +902,19 @@ int main()
 
     // Show the console
     ShowWindow(GetConsoleWindow(), SW_SHOW);
+
+    // Read all Profiles
+    g_profiles = new ProfileLoader();
+    // Profile Selection
+    showProfileSelection();
+    profileKeyHandler();
+
+    // Show the Menu again
+    showIntroMenu();
+
+    // Our Reader and Patcher
+    g_reader = new ConfigReader(g_profiles->GetCurrentProfile());
+    g_cmUnleashed = new CMUnleashed();
 
     // Start our Key handling thread
     std::thread keyThread(_KeyThread);
