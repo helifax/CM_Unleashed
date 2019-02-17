@@ -52,8 +52,9 @@ std::vector<std::string> ProfileLoader::get_all_files_names_within_folder(std::s
 
 ConfigReader::ConfigReader(std::string _profileToLoad)
 {
+    _currentProfile = _profileToLoad;
     _gameExe = "";
-    std::string configFileName = GetPath() + "\\Profiles\\" + _profileToLoad;
+    std::string configFileName = GetPath() + "\\Profiles\\" + _currentProfile;
     std::ifstream configFile(configFileName);
     std::string configLine;
 
@@ -172,7 +173,7 @@ ConfigReader::ConfigReader(std::string _profileToLoad)
 
 void ConfigReader::ReadKeySettings()
 {
-    std::string configFileName = GetPath() + "/3DVision_CM_Unleashed.ini";
+    std::string configFileName = GetPath() + "\\Profiles\\" + _currentProfile;
     std::ifstream configFile(configFileName);
     std::string configLine;
 

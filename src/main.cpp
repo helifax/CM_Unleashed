@@ -494,7 +494,7 @@ static void _KeyThread()
         else if(IsKeyDown(VK_CONTROL) && IsKeyDown(VK_SHIFT) && IsKeyDown(VK_F10))
         {
             console_log("-------------------------------------------------------------------\n");
-            console_log("\"3DVision_CM_Unleashed.ini\" file successfully read!\n");
+            console_log("\"%s\" file successfully read!\n", g_profiles->GetCurrentProfile().c_str());
             console_log("-------------------------------------------------------------------\n\n");
 
             // Re-trigger the config reader
@@ -779,7 +779,9 @@ static void menukeyHandler()
         {
             if(_mainMenu)
             {
-                system("start 3DVision_CM_Unleashed.ini");
+                std::string iniFile = GetPath() + "\\Profiles\\" + g_profiles->GetCurrentProfile();
+                iniFile = "\"" + iniFile + "\"";
+                system(iniFile.c_str());
             }
         }
         break;
@@ -825,7 +827,6 @@ static void menukeyHandler()
 
 static void profileKeyHandler()
 {
-    char key;
     bool stop = false;
     std::vector<std::string> allProfiles = g_profiles->GetAllProfiles();
     int profileNumber;

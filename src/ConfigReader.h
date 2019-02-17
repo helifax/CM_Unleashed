@@ -215,4 +215,5 @@ private:
     uint32_t _cm_Profile = 0;
     uint32_t _cm_Convergence = 0;
     std::string _cm_Comments = "";
+    std::string _currentProfile = "";
 };
