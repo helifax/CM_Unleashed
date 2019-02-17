@@ -105,7 +105,6 @@ bool CMUnleashed::findSignature(const std::string _process, const std::string &m
                     {
                         // Grab the module Name.
                         // (Nice work-around ^_^)
-                        int nLen;
                         char szModName[MAX_PATH]{ 0 };
                         GetMappedFileName(p, pb, szModName, _countof(szModName));
                         std::string temp = std::string(szModName);
