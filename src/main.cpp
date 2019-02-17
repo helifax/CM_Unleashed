@@ -623,7 +623,7 @@ static void showIntroMenu()
     console_log("\n");
     console_log("---------------------------------------------------------------------\n");
     console_log("| Welcome to 3D Vision Compatibility Mode \"Unleashed\"!              |\n");
-    console_log("| Ver: 1.0.0                                                        |\n");
+    console_log("| Ver: 1.0.12                                                       |\n");
     console_log("| Developed by: Helifax (2019)                                      |\n");
     console_log("| If you would like to donate you can do it at: tavyhome@gmail.com  |\n");
     console_log("|                                                                   |\n");
