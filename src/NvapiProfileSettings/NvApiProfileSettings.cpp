@@ -18,6 +18,8 @@ Interface to NVAPI to handle profile modification/creation in order for 3D Visio
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include <algorithm>
+#include <string>
 #include "NVAPI_410\nvapi.h"
 #include "NVAPI_410\NvApiDriverSettings.h"
 
@@ -168,6 +170,8 @@ static bool NvApi_IsProfileFound(NvDRSSessionHandle hSession, NvDRSProfileHandle
             const size_t newsize = 100;
             size_t convertedChars = 0;
             wchar_t unicodeExeName[newsize];
+            std::transform(m_gameExe.begin(), m_gameExe.end(), m_gameExe.begin(), tolower);
+
             mbstowcs_s(&convertedChars, unicodeExeName, origsize, m_gameExe.c_str(), _TRUNCATE);
             swprintf_s(appName, 255, L"%s", (wchar_t*)appArray[i].appName);
 
@@ -370,7 +374,7 @@ static bool NvApi_ApplyProfileSettings(NvDRSSessionHandle hSession, NvDRSProfile
         setNewSettings.version = NVDRS_SETTING_VER;
         setNewSettings.settingId = CM_2DD_CONVERGENCE;
         setNewSettings.settingType = NVDRS_DWORD_TYPE;
-        setNewSettings.u32CurrentValue = 938836823;  // Witcher 3 CM value
+        setNewSettings.u32CurrentValue = m_convergenceValue;  // Witcher 3 CM value
         status = NvAPI_DRS_SetSetting(hSession, hProfile, &setNewSettings);
     }
 

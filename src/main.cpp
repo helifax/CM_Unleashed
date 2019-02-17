@@ -49,6 +49,16 @@ static void _AutoStart();
 static void _KeyThread();
 
 // GLOBAL PRINT
+
+static std::string GetPath()
+{
+    char buffer[MAX_PATH];
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+    return std::string(buffer).substr(0, pos);
+}
+//-----------------------------------------------------------------------------------
+
 void __cdecl console_log(const char* fmt, ...)
 {
     const size_t MAX_SIZE = 500000;
@@ -61,6 +71,30 @@ void __cdecl console_log(const char* fmt, ...)
 
     printf("%s", logbuf);
     printf(">");
+}
+//-----------------------------------------------------------------------------
+
+void __cdecl add_to_log(const char* fmt, ...)
+{
+    const size_t MAX_SIZE = 500000;
+    va_list va_alist;
+    char logbuf[MAX_SIZE] = "";
+
+    va_start(va_alist, fmt);
+    _vsnprintf_s(logbuf + strlen(logbuf), MAX_SIZE, sizeof(logbuf) - strlen(logbuf), fmt, va_alist);
+    va_end(va_alist);
+
+    std::string path = GetPath();
+    path += "/3DVision_CM_Unleased.log";
+
+    errno_t err;
+    FILE* fp;
+    err = fopen_s(&fp, path.c_str(), "ab");
+    if(err == 0)
+    {
+        fprintf(fp, "%s", logbuf);
+        fclose(fp);
+    }
 }
 //-----------------------------------------------------------------------------
 
@@ -372,6 +406,26 @@ static void _KeyThread()
 
             if(!_isPatchEnabled)
             {
+                // Profile Update
+                if(g_reader->UpdateCMProfile())
+                {
+                    bool profileUpdateOK = NvApi_3DVisionProfileSetup(g_reader->GetGameExe(), g_reader->GetStereoTexture(), g_reader->GetCMProfile(), g_reader->GetCMConvergence(), g_reader->GetCMComments());
+
+                    if(!profileUpdateOK)
+                    {
+                        console_log("\n-----------------------------------------------------------------------------\n");
+                        console_log("!!!Could not update the Nvidia Profile with the Compatibility Mode Values !!!\n");
+                        console_log("Are you sure you are in \"RUN AS ADMIN\" Mode?!?!\n");
+                        console_log("-----------------------------------------------------------------------------\n\n");
+                    }
+                    else
+                    {
+                        console_log("\n-----------------------------------------------------------------------------\n");
+                        console_log("Nvidia Profile Updated with the CM flags. (You might need to restart the game!)\n");
+                        console_log("-------------------------------------------------------------------------------\n\n");
+                    }
+                }
+
                 // Do the patching
                 _isPatchEnabled = g_cmUnleashed->DoPatching(gameExeName);
 
@@ -406,15 +460,29 @@ static void _KeyThread()
             g_cmUnleashed->CM_GetSeparationFactor(&sep);
 
             console_log("-------------------------------------------------------------------\n");
+            add_to_log("-------------------------------------------------------------------\n");
             if(sep)
+            {
                 console_log("Current Separation Percentage: %f\n", sep * 100);
+                add_to_log("Current Separation Percentage: %f\n", sep * 100);
+            }
             else
+            {
                 console_log("!!! Can not get current Separation Percentage !!!\n");
+                add_to_log("!!! Can not get current Separation Percentage !!!\n");
+            }
             if(conv)
+            {
                 console_log("Current Convergence: %f\n", conv);
+                add_to_log("Current Convergence: %f\n", conv);
+            }
             else
+            {
                 console_log("!!! Can not get current Convergence !!!\n");
+                add_to_log("!!! Can not get current Convergence !!!\n");
+            }
             console_log("-------------------------------------------------------------------\n\n");
+            add_to_log("-------------------------------------------------------------------\n\n");
 
             PlaySound(TEXT("MessageNudge"), NULL, SND_ALIAS | SND_ASYNC);
 
