@@ -108,7 +108,7 @@ bool CMUnleashed::findSignature(const std::string _process, const std::string &m
                         char szModName[MAX_PATH]{ 0 };
                         GetMappedFileName(p, pb, szModName, _countof(szModName));
                         std::string temp = std::string(szModName);
-                        if(temp.find(m_moduleName64) != std::string::npos)
+                        if(temp.find(moduleName) != std::string::npos)
                         {
                             // Start the memory search!
                             MEMORY_BASIC_INFORMATION mbiModule{};
@@ -164,7 +164,7 @@ bool CMUnleashed::findSignature(const std::string _process, const std::string &m
 bool CMUnleashed::injectCodeCaveSeparation32(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -202,7 +202,7 @@ bool CMUnleashed::injectCodeCaveSeparation32(const DWORD64 baseAddress, const DW
             memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
-        if(newCodeCoveSeparation)
+        if(newCodeCoveSeparation && newSeparation && prevSeparation)
         {
             // Store the original code that we will inject -> for reverting!
             ReadProcessMemory(p, ADDRESS((DWORD64)(signatureAddress)), &_originalSeparationCode, 8, NULL);
@@ -284,7 +284,7 @@ bool CMUnleashed::injectCodeCaveSeparation32(const DWORD64 baseAddress, const DW
 bool CMUnleashed::injectCodeCaveConvergence32(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -326,7 +326,7 @@ bool CMUnleashed::injectCodeCaveConvergence32(const DWORD64 baseAddress, const D
             memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
-        if(newCodeCoveConvergence)
+        if(newCodeCoveConvergence && crtConvergence && newConvergence && prevConvergence)
         {
             // Store the original code that we will inject -> for reverting!
             ReadProcessMemory(p, ADDRESS((DWORD64)(signatureAddress)), &_originalConvergenceCode, 8, NULL);
@@ -408,7 +408,7 @@ bool CMUnleashed::injectCodeCaveConvergence32(const DWORD64 baseAddress, const D
 bool CMUnleashed::injectCodeCaveSeparation64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -444,12 +444,12 @@ bool CMUnleashed::injectCodeCaveSeparation64(const DWORD64 baseAddress, const DW
                 }
             }
             // WHY?!?!
-            memoryRegionStart += 4096;
+            memoryRegionStart += 2048;
             // This doesn't work! It seems we allocate WAAAAY to far (outside the 32-bit jump)
             //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
-        if(newCodeCoveSeparation)
+        if(newCodeCoveSeparation && newSeparation && prevSeparation)
         {
             // Store the original code that we will inject -> for reverting!
             ReadProcessMemory(p, ADDRESS((DWORD64)(signatureAddress)), &_originalSeparationCode, 8, NULL);
@@ -541,7 +541,7 @@ bool CMUnleashed::injectCodeCaveSeparation64(const DWORD64 baseAddress, const DW
 bool CMUnleashed::injectCodeCaveConvergence64(const DWORD64 baseAddress, const DWORD64 signatureAddress, const std::string &shellcode)
 {
     // Get our process handle
-    HANDLE p = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
+    HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, 0, _exePid);
 
     if(p)
     {
@@ -581,12 +581,12 @@ bool CMUnleashed::injectCodeCaveConvergence64(const DWORD64 baseAddress, const D
                 }
             }
             // WHY?!?!
-            memoryRegionStart += 4096;
+            memoryRegionStart += 2048;
             // This doesn't work! It seems we allocate WAAAAY to far (outside the 32-bit jump)
             //memoryRegionStart = (DWORD64)mBI.BaseAddress + mBI.RegionSize;
         }
 
-        if(newCodeCoveConvergence)
+        if(newCodeCoveConvergence && crtConvergence && newConvergence && prevConvergence)
         {
             // Store the original code that we will inject -> for reverting!
             ReadProcessMemory(p, ADDRESS((DWORD64)(signatureAddress)), &_originalConvergenceCode, 8, NULL);
@@ -871,7 +871,7 @@ bool CMUnleashed ::RestoreOriginal(std::string &gameExeName)
     }
     else
     {
-        console_log("Application has exited! Nothing to restore!\n");
+        console_log("Nothing to restore (Either the Cleanup took place or the Application Exited.\n");
     }
     console_log("-------------------------------------------------------------------\n\n");
 

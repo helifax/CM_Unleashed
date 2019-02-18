@@ -626,13 +626,13 @@ static void showIntroMenu()
     console_log("\n");
     console_log("---------------------------------------------------------------------\n");
     console_log("| Welcome to 3D Vision Compatibility Mode \"Unleashed\"!              |\n");
-    console_log("| Ver: 1.0.14                                                       |\n");
+    console_log("| Ver: 1.0.16                                                       |\n");
     console_log("| Developed by: Helifax (2019)                                      |\n");
     console_log("| If you would like to donate you can do it at: tavyhome@gmail.com  |\n");
     console_log("|                                                                   |\n");
     console_log("| Supports 32-bits(x86) and 64-bits(x64) Applications!              |\n");
     console_log("| - Windows 7 and above (x64 only) -                                |\n");
-    console_log("--------------------------------------------------------------------\n\n");
+    console_log("---------------------------------------------------------------------\n\n");
     console_log("Important:\n");
     console_log("- Always \"RUN AS ADMIN\" !\n");
     console_log("- Don't forget to change the Frustum (CTRL + F11) to un-stretch the image, for BEST RESULTS!\n");
@@ -660,10 +660,11 @@ static void showMenu()
     showIntroMenu();
     console_log("Options:\n");
     console_log("1. In-depth Instructions on how to use it.\n");
-    console_log("2. Open \"3DVision_CM_Unleshed.ini\" file.\n");
-    console_log("3. Looking for an update? Check here! (opens Web-page)\n");
-    console_log("4. Do you want to see screenshots? Or to discuss? Let's do it on GeForce Forums thread! (opens Web-page)\n");
-    console_log("5. Quit.\n\n");
+    console_log("2. Select a different profile.\n");
+    console_log("3. Open \"%s\" file.\n", g_profiles->GetCurrentProfile().c_str());
+    console_log("4. Looking for an update? Check here! (opens Web-page)\n");
+    console_log("5. Do you want to see screenshots? Or to discuss? Let's do it on GeForce Forums thread! (opens Web-page)\n");
+    console_log("6. Quit.\n\n");
     console_log("Awaiting commands :)\n");
 }
 //-----------------------------------------------------------------------------
@@ -757,74 +758,6 @@ static void showInfo()
 }
 //-----------------------------------------------------------------------------
 
-static void menukeyHandler()
-{
-    char key;
-    do
-    {
-        key = _getch();
-        switch(key)
-        {
-            // 1 key
-        case 0x31:
-        {
-            if(_mainMenu && !_infoMenu)
-                showInfo();
-            else
-                showMenu();
-        }
-        break;
-            // 2 key
-        case 0x32:
-        {
-            if(_mainMenu)
-            {
-                std::string iniFile = GetPath() + "\\Profiles\\" + g_profiles->GetCurrentProfile();
-                iniFile = "\"" + iniFile + "\"";
-                system(iniFile.c_str());
-            }
-        }
-        break;
-            // 3 key
-        case 0x33:
-        {
-            if(_mainMenu)
-            {
-                ShellExecute(0, 0, "http://3dsurroundgaming.com/CMUnleashed.html", 0, 0, SW_SHOW);
-            }
-        }
-        break;
-            // 4 key
-        case 0x34:
-        {
-            if(_mainMenu)
-            {
-                ShellExecute(0, 0, "https://forums.geforce.com/default/topic/1097032/3d-vision/3d-vision-compatibility-mode-quot-unleashed-quot-/", 0, 0, SW_SHOW);
-            }
-        }
-        break;
-
-        case VK_BACK:
-        {
-            showMenu();
-        }
-        break;
-
-        default:
-            //if(key != VK_BACK || key != VK_HOME || key != 'T' || key != VK_F10)
-            //console_log("Unknown command?!\n");
-            break;
-        }
-        // 5 key.
-    } while((key != 0x35) || _infoMenu);
-
-    printf("\n-------------------\n");
-    printf("Have a nice day! :)\n");
-    printf("-------------------\n");
-    Sleep(2000);
-}
-//-------------------------------------------------------------------------------------------
-
 static void profileKeyHandler()
 {
     bool stop = false;
@@ -852,6 +785,87 @@ static void profileKeyHandler()
             console_log("%d is not a valid Profile number. Please try again!\n", profileNumber);
         }
     }
+}
+//-------------------------------------------------------------------------------------------
+
+static void menukeyHandler()
+{
+    char key;
+    do
+    {
+        key = _getch();
+        switch(key)
+        {
+            // 1 key
+        case 0x31:
+        {
+            if(_mainMenu && !_infoMenu)
+                showInfo();
+            else
+                showMenu();
+        }
+        break;
+        // 2 key
+        case 0x32:
+        {
+            showProfileSelection();
+            profileKeyHandler();
+
+            if(g_reader)
+                delete g_reader;
+            g_reader = new ConfigReader(g_profiles->GetCurrentProfile());
+
+            showMenu();
+        }
+        break;
+        // 3 key
+        case 0x33:
+        {
+            if(_mainMenu)
+            {
+                std::string iniFile = GetPath() + "\\Profiles\\" + g_profiles->GetCurrentProfile();
+                iniFile = "\"" + iniFile + "\"";
+                ShellExecute(0, 0, iniFile.c_str(), 0, 0, SW_SHOW);
+            }
+        }
+        break;
+            // 4 key
+        case 0x34:
+        {
+            if(_mainMenu)
+            {
+                ShellExecute(0, 0, "http://3dsurroundgaming.com/CMUnleashed.html", 0, 0, SW_SHOW);
+            }
+        }
+        break;
+            // 5 key
+        case 0x35:
+        {
+            if(_mainMenu)
+            {
+                ShellExecute(0, 0, "https://forums.geforce.com/default/topic/1097032/3d-vision/3d-vision-compatibility-mode-quot-unleashed-quot-/", 0, 0, SW_SHOW);
+            }
+        }
+        break;
+
+        case VK_BACK:
+        {
+            showMenu();
+        }
+        break;
+
+        default:
+            //if(key != VK_BACK || key != VK_HOME || key != 'T' || key != VK_F10)
+            //console_log("Unknown command?!\n");
+            break;
+        }
+        // 6 key.
+    } while((key != 0x36) || _infoMenu);
+
+    printf("\n-------------------\n");
+    printf("Have a nice day! :)\n");
+    printf("-------------------\n");
+    Sleep(2000);
 }
 //-------------------------------------------------------------------------------------------
 
@@ -894,7 +908,7 @@ int main()
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
     CSplashWnd splash;
     splash.Show();
-    Sleep(4000);
+    //Sleep(4000);
     splash.Hide();
     GdiplusShutdown(gdiplusToken);
 
