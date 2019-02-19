@@ -204,6 +204,14 @@ private:
     void ReadKeySettings();
     void AddAlternativeKey(std::string &configLine);
 
+public:
+    bool _isPressAndHoldConvergence = false;
+    bool _isPressAndHoldSeparation = false;
+    bool _isToggleConvergence = false;
+    bool _isToggleSeparation = false;
+    float _prevSeparationFactor = 1.0;
+    float _prevConvergence = 0.0;
+
 private:
     std::vector<ALT_KEYS_T> _altKeys;
     std::string _gameExe = "";

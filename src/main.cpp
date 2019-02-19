@@ -34,9 +34,7 @@ ConfigReader* g_reader = nullptr;
 CMUnleashed* g_cmUnleashed = nullptr;
 
 static bool _keyThreadRunning = true;
-static bool _isPressAndHold = false;
-static std::deque<float> queuedConv;
-static std::deque<float> queuedSep;
+
 static bool _isPatchEnabled = false;
 static bool _mainMenu = true;
 static bool _infoMenu = false;
@@ -108,6 +106,7 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex);
 // Xbox controller support
 static CXBOXController* g_xController = new CXBOXController(1);
 static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex);
+static bool IsXControllerAltKeyToggleKeyDownToggle(int keyCodeIndex);
 //-----------------------------------------------------------------------------
 
 static void _Run_Keys_OneTime(size_t keyIndex, size_t& returnIndex)
@@ -123,7 +122,10 @@ static void _Run_Keys_OneTime(size_t keyIndex, size_t& returnIndex)
             if(temp != -1.0f)
             {
                 // Apply the new convergence
+                g_cmUnleashed->CM_GetConvergence(&g_reader->_prevConvergence);
                 g_cmUnleashed->CM_SetConvergence(&temp);
+                g_reader->_isToggleConvergence = false;
+                g_reader->_isPressAndHoldConvergence = false;
             }
         }
 
@@ -133,7 +135,10 @@ static void _Run_Keys_OneTime(size_t keyIndex, size_t& returnIndex)
             // do it just once
             if(temp != -1.0f)
             {
+                g_reader->_prevSeparationFactor = temp;
                 g_cmUnleashed->CM_SetSeparationFactor(&temp);
+                g_reader->_isToggleSeparation = false;
+                g_reader->_isPressAndHoldSeparation = false;
             }
         }
 
@@ -149,141 +154,105 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
     // Push to hold settings
     // Only Separation & Convergence are handled
     /////////////////////////////////////
-
-    static float crtConv = 0;
-    static float crtSep = 0;
-
     int currentKeyCode = g_reader->GetKeyNumber((int)keyIndex);
+    int prevState = g_reader->GetKeyPrevState((int)keyIndex);
+
     if(IsKeyDown(currentKeyCode) || IsXControllerAltKeyToggleKeyDown((int)keyIndex))
     {
+        if(!g_reader->_isPressAndHoldConvergence && !g_reader->_isToggleConvergence)
+        {
+            g_cmUnleashed->CM_GetConvergence(&g_reader->_prevConvergence);
+        }
+
         // Custom Convergence
         float temp = -1.0f;
         if(g_reader->GetAltConvergence((int)keyIndex, &temp))
         {
-            if(temp != -1.0f && crtConv != temp)
+            if(temp != -1.0f && g_reader->_prevConvergence != temp)
             {
                 // Apply the new convergence
-                float conv = 0;
-                if(g_cmUnleashed->CM_GetConvergence(&conv))
-                {
-                    crtConv = conv;
-                    g_cmUnleashed->CM_SetConvergence(&temp);
-                }
+                g_cmUnleashed->CM_SetConvergence(&temp);
+                g_reader->_isPressAndHoldConvergence = true;
             }
         }
         // Custom Separation
         if(g_reader->GetAltSeparation((int)keyIndex, &temp))
         {
-            if(temp != -1.0f && crtSep != temp)
+            if(temp != -1.0f && g_reader->_prevSeparationFactor != temp)
             {
                 // Apply the new separation
-                crtSep = temp;
                 g_cmUnleashed->CM_SetSeparationFactor(&temp);
+                g_reader->_isPressAndHoldSeparation = true;
             }
         }
-        _isPressAndHold = true;
         returnIndex = g_reader->GetNumberOfKeys();
     }
-    else if(_isPressAndHold && (g_reader->GetKeyNumber((int)keyIndex) != g_xController->GetState().Gamepad.wButtons))
+    else if((g_reader->_isPressAndHoldConvergence || g_reader->_isPressAndHoldSeparation) && !IsXControllerAltKeyToggleKeyDown((int)keyIndex))
     {
-        if(crtConv)
+        if(g_reader->_isPressAndHoldConvergence)
         {
-            g_cmUnleashed->CM_SetConvergence(&crtConv);
-            crtConv = 0;
+            g_cmUnleashed->CM_SetConvergence(&g_reader->_prevConvergence);
+            g_reader->_isPressAndHoldConvergence = false;
         }
 
-        if(crtSep)
+        if(g_reader->_isPressAndHoldSeparation)
         {
-            float revertFactor = 1.0f;
-            g_cmUnleashed->CM_SetSeparationFactor(&revertFactor);
-            crtSep = 0;
+            g_cmUnleashed->CM_SetSeparationFactor(&g_reader->_prevSeparationFactor);
+            g_reader->_isPressAndHoldConvergence = false;
         }
         g_reader->SetKeyPrevState(g_reader->GetKeyNumber((int)keyIndex), 0);
-        _isPressAndHold = false;
     }
 }
 //-----------------------------------------------------------------------------
 
 static void _Run_Keys_Toggle(size_t keyIndex, size_t& returnIndex)
 {
-    static float crtSep = 0;
-    static float crtConv = 0;
-
     // Toggled Enabled
-    if(IsAltKeyToggleKeyDown((int)keyIndex) || IsXControllerAltKeyToggleKeyDown((int)keyIndex))
+    if(IsAltKeyToggleKeyDown((int)keyIndex) || IsXControllerAltKeyToggleKeyDownToggle((int)keyIndex))
     {
-        // Convergence
+        if(!g_reader->_isToggleConvergence && !g_reader->_isPressAndHoldConvergence)
+        {
+            g_cmUnleashed->CM_GetConvergence(&g_reader->_prevConvergence);
+        }
+
+        // Custom Convergence
         float temp = -1.0f;
         if(g_reader->GetAltConvergence((int)keyIndex, &temp))
         {
-            // First time
-            if(!queuedConv.size())
+            if(temp != -1.0f && g_reader->_prevConvergence != temp)
             {
-                if(temp != -1.0f && crtConv != temp)
+                if(!g_reader->_isToggleConvergence)
                 {
-                    float conv = 0;
-                    if(g_cmUnleashed->CM_GetConvergence(&conv))
-                    {
-                        // Apply the new convergence
-                        queuedConv.push_back(temp);
-                        crtConv = conv;
-                        g_cmUnleashed->CM_SetConvergence(&temp);
-                    }
-                }
-            }
-            // Queue
-            else if(queuedConv[queuedConv.size() - 1] != temp)
-            {
-                if(temp != -1.0f)
-                {
-                    queuedConv.push_back(temp);
+                    // Apply the new convergence
                     g_cmUnleashed->CM_SetConvergence(&temp);
+                    g_reader->_isToggleConvergence = true;
                 }
-            }
-            // Revert back only on the last convergence!
-            else if(queuedConv[queuedConv.size() - 1] == temp)
-            {
-                // Revert to original
-                g_cmUnleashed->CM_SetConvergence(&crtConv);
-                queuedConv.clear();
-                crtConv = 0;
+                else if(g_reader->_isToggleConvergence)
+                {
+                    g_cmUnleashed->CM_SetConvergence(&g_reader->_prevConvergence);
+                    g_reader->_isToggleConvergence = false;
+                }
             }
         }
 
         // Separation
         if(g_reader->GetAltSeparation((int)keyIndex, &temp))
         {
-            // First time
-            if(!queuedSep.size())
+            if(temp != -1.0f && g_reader->_prevSeparationFactor != temp)
             {
-                if(temp != -1.0f && crtSep != temp)
+                if(!g_reader->_isToggleSeparation)
                 {
                     // Apply the new separation
-                    queuedSep.push_back(temp);
-                    crtSep = temp;
                     g_cmUnleashed->CM_SetSeparationFactor(&temp);
+                    g_reader->_isToggleSeparation = true;
                 }
-            }
-            // Queue
-            else if(queuedSep[queuedSep.size() - 1] != temp)
-            {
-                if(temp != -1.0f)
+                else if(g_reader->_isToggleSeparation)
                 {
-                    queuedSep.push_back(temp);
-                    g_cmUnleashed->CM_SetSeparationFactor(&temp);
+                    g_cmUnleashed->CM_SetSeparationFactor(&g_reader->_prevSeparationFactor);
+                    g_reader->_isToggleSeparation = false;
                 }
-            }
-            // Revert back only on the last convergence!
-            else if(queuedSep[queuedSep.size() - 1] == temp)
-            {
-                // Revert to original
-                float revertFactor = 1.0f;
-                g_cmUnleashed->CM_SetSeparationFactor(&revertFactor);
-                queuedSep.clear();
-                crtSep = 0;
             }
         }
-
         // Force the index out of size in order to break the for() loop
         returnIndex = g_reader->GetNumberOfKeys();
     }
@@ -579,7 +548,7 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex)
         ret = true;
     }
     // Don't overwrite the XBOX states!
-    else if(g_xController->GetState().Gamepad.wButtons != currentKey)
+    else if((g_xController->GetState().Gamepad.wButtons != currentKey) && (currentKey != INPUT_GAMEPAD_LEFT_TRIGGER) && (currentKey != INPUT_GAMEPAD_RIGHT_TRIGGER))
         g_reader->SetKeyPrevState(keyCodeIndex, state);
 
     return ret;
@@ -588,6 +557,66 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex)
 
 // XBOX
 static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex)
+{
+    bool state = 0;
+
+    int currentKey = g_reader->GetKeyNumber(keyCodeIndex);
+    if(
+        (currentKey == XINPUT_GAMEPAD_DPAD_UP) ||
+        (currentKey == XINPUT_GAMEPAD_DPAD_DOWN) ||
+        (currentKey == XINPUT_GAMEPAD_DPAD_LEFT) ||
+        (currentKey == XINPUT_GAMEPAD_DPAD_RIGHT) ||
+        (currentKey == XINPUT_GAMEPAD_START) ||
+        (currentKey == XINPUT_GAMEPAD_BACK) ||
+        (currentKey == XINPUT_GAMEPAD_LEFT_THUMB) ||
+        (currentKey == XINPUT_GAMEPAD_RIGHT_THUMB) ||
+        (currentKey == XINPUT_GAMEPAD_LEFT_SHOULDER) ||
+        (currentKey == XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
+        (currentKey == XINPUT_GAMEPAD_A) ||
+        (currentKey == XINPUT_GAMEPAD_B) ||
+        (currentKey == XINPUT_GAMEPAD_X) ||
+        (currentKey == XINPUT_GAMEPAD_Y) ||
+        (currentKey == INPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == INPUT_GAMEPAD_RIGHT_TRIGGER))
+    {
+        switch(currentKey)
+        {
+        case INPUT_GAMEPAD_LEFT_TRIGGER:
+        {
+            if(g_xController->GetState().Gamepad.bLeftTrigger >= 128)
+            {
+                g_reader->SetKeyPrevState(keyCodeIndex, 1);
+                return true;
+            }
+        }
+        break;
+
+        case INPUT_GAMEPAD_RIGHT_TRIGGER:
+        {
+            if(g_xController->GetState().Gamepad.bRightTrigger >= 128)
+            {
+                g_reader->SetKeyPrevState(keyCodeIndex, 1);
+                return true;
+            }
+        }
+        break;
+
+        default:
+        {
+            if(g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex))
+            {
+                g_reader->SetKeyPrevState(keyCodeIndex, 1);
+                return true;
+            }
+        }
+        break;
+        }
+    }
+    return false;
+}
+//--------------------------------------------------------------------------------------
+
+static bool IsXControllerAltKeyToggleKeyDownToggle(int keyCodeIndex)
 {
     bool ret = false;
     int currentKey = g_reader->GetKeyNumber(keyCodeIndex);
@@ -605,10 +634,12 @@ static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex)
         (currentKey == XINPUT_GAMEPAD_A) ||
         (currentKey == XINPUT_GAMEPAD_B) ||
         (currentKey == XINPUT_GAMEPAD_X) ||
-        (currentKey == XINPUT_GAMEPAD_Y))
+        (currentKey == XINPUT_GAMEPAD_Y) ||
+        (currentKey == INPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == INPUT_GAMEPAD_RIGHT_TRIGGER))
     {
         //Return if the high byte is true (ie key is down)
-        int state = g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex);
+        int state = (g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex));
         int prevState = g_reader->GetKeyPrevState(keyCodeIndex);
         if((prevState != state))
         {
@@ -853,6 +884,11 @@ static void menukeyHandler()
             showMenu();
         }
         break;
+
+        // New Line
+        case 0x0d:
+            console_log("\n");
+            break;
 
         default:
             //if(key != VK_BACK || key != VK_HOME || key != 'T' || key != VK_F10)
