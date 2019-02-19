@@ -201,6 +201,7 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
             g_reader->_isPressAndHoldConvergence = false;
         }
         g_reader->SetKeyPrevState(g_reader->GetKeyNumber((int)keyIndex), 0);
+        returnIndex = g_reader->GetNumberOfKeys();
     }
 }
 //-----------------------------------------------------------------------------
