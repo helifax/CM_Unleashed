@@ -158,9 +158,21 @@ public:
     }
     // ---------------------------------------------------------------------------------------------
 
+    void SetAutoStartEnabled(bool enable)
+    {
+        _autoStart = enable;
+    }
+    // ---------------------------------------------------------------------------------------------
+
     bool AutoStartEnabled()
     {
         return _autoStart;
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    void SetAutoStartMs(uint32_t autoStartMs)
+    {
+        _autoStartDelayMs = autoStartMs;
     }
     // ---------------------------------------------------------------------------------------------
 
@@ -207,6 +219,7 @@ private:
 public:
     bool _isPressAndHoldConvergence = false;
     bool _isPressAndHoldSeparation = false;
+    int _pressAndHoldKey = 0;
     bool _isToggleConvergence = false;
     bool _isToggleSeparation = false;
     float _prevSeparationFactor = 1.0;

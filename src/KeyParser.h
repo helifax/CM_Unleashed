@@ -250,8 +250,8 @@ static EnumName_t<const char *, int> VKMappings[] = {
     { "XINPUT_GAMEPAD_B", 0x2000 },
     { "XINPUT_GAMEPAD_X", 0x4000 },
     { "XINPUT_GAMEPAD_Y", 0x8000 },
-    { "INPUT_GAMEPAD_LEFT_TRIGGER", 0x1111 },
-    { "INPUT_GAMEPAD_RIGHT_TRIGGER", 0x2222 },
+    { "XINPUT_GAMEPAD_LEFT_TRIGGER", 0x1111 },
+    { "XINPUT_GAMEPAD_RIGHT_TRIGGER", 0x2222 },
 };
 //-----------------------------------------------------------------------------
 

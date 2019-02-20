@@ -105,14 +105,14 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex);
 
 // Xbox controller support
 static CXBOXController* g_xController = new CXBOXController(1);
-static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex);
+static bool IsXControllerAltKeyDown(int keyCodeIndex, int* foundKeyCode);
 static bool IsXControllerAltKeyToggleKeyDownToggle(int keyCodeIndex);
 //-----------------------------------------------------------------------------
 
 static void _Run_Keys_OneTime(size_t keyIndex, size_t& returnIndex)
 {
     // Toggled Enabled
-    if(IsAltKeyToggleKeyDown((int)keyIndex) || IsXControllerAltKeyToggleKeyDown((int)keyIndex))
+    if(IsAltKeyToggleKeyDown((int)keyIndex) || IsXControllerAltKeyDown((int)keyIndex, nullptr))
     {
         // Convergence
         float temp = -1.0f;
@@ -157,7 +157,7 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
     int currentKeyCode = g_reader->GetKeyNumber((int)keyIndex);
     int prevState = g_reader->GetKeyPrevState((int)keyIndex);
 
-    if(IsKeyDown(currentKeyCode) || IsXControllerAltKeyToggleKeyDown((int)keyIndex))
+    if(IsKeyDown(currentKeyCode) || IsXControllerAltKeyDown((int)keyIndex, &g_reader->_pressAndHoldKey))
     {
         if(!g_reader->_isPressAndHoldConvergence && !g_reader->_isToggleConvergence)
         {
@@ -172,6 +172,7 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
             {
                 // Apply the new convergence
                 g_cmUnleashed->CM_SetConvergence(&temp);
+                g_reader->_pressAndHoldKey = currentKeyCode;
                 g_reader->_isPressAndHoldConvergence = true;
             }
         }
@@ -182,12 +183,13 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
             {
                 // Apply the new separation
                 g_cmUnleashed->CM_SetSeparationFactor(&temp);
+                g_reader->_pressAndHoldKey = currentKeyCode;
                 g_reader->_isPressAndHoldSeparation = true;
             }
         }
         returnIndex = g_reader->GetNumberOfKeys();
     }
-    else if((g_reader->_isPressAndHoldConvergence || g_reader->_isPressAndHoldSeparation) && !IsXControllerAltKeyToggleKeyDown((int)keyIndex))
+    else if((g_reader->_isPressAndHoldConvergence || g_reader->_isPressAndHoldSeparation) && g_reader->_pressAndHoldKey == currentKeyCode)
     {
         if(g_reader->_isPressAndHoldConvergence)
         {
@@ -488,6 +490,8 @@ static void _KeyThread()
                 g_reader = new ConfigReader(g_profiles->GetCurrentProfile());
                 _manuallyDisabled = false;
                 PlaySound(TEXT("DeviceConnect"), NULL, SND_ALIAS | SND_ASYNC);
+                g_reader->SetAutoStartEnabled(true);
+                g_reader->SetAutoStartMs(2000);
 
                 _autoStartStarted = true;
                 std::thread autoStart(_AutoStart);
@@ -495,6 +499,19 @@ static void _KeyThread()
             }
 
             Sleep(300);
+        }
+        else if(IsKeyDown(VK_CONTROL) && IsKeyDown(VK_SHIFT) && IsKeyDown(VK_OEM_PLUS))
+        {
+            g_reader->_prevSeparationFactor += 0.05f;
+            g_cmUnleashed->CM_SetSeparationFactor(&g_reader->_prevSeparationFactor);
+        }
+        else if(IsKeyDown(VK_CONTROL) && IsKeyDown(VK_SHIFT) && IsKeyDown(VK_OEM_MINUS))
+        {
+            if(g_reader->_prevSeparationFactor - 0.05f > 0.0f)
+            {
+                g_reader->_prevSeparationFactor -= 0.05f;
+                g_cmUnleashed->CM_SetSeparationFactor(&g_reader->_prevSeparationFactor);
+            }
         }
 
         // Key Handler
@@ -549,7 +566,7 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex)
         ret = true;
     }
     // Don't overwrite the XBOX states!
-    else if((g_xController->GetState().Gamepad.wButtons != currentKey) && (currentKey != INPUT_GAMEPAD_LEFT_TRIGGER) && (currentKey != INPUT_GAMEPAD_RIGHT_TRIGGER))
+    else if((g_xController->GetState().Gamepad.wButtons != currentKey) && (currentKey != XINPUT_GAMEPAD_LEFT_TRIGGER) && (currentKey != XINPUT_GAMEPAD_RIGHT_TRIGGER))
         g_reader->SetKeyPrevState(keyCodeIndex, state);
 
     return ret;
@@ -557,7 +574,7 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex)
 //-----------------------------------------------------------------------------
 
 // XBOX
-static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex)
+static bool IsXControllerAltKeyDown(int keyCodeIndex, int* foundKeyCode)
 {
     bool state = 0;
 
@@ -577,40 +594,21 @@ static bool IsXControllerAltKeyToggleKeyDown(int keyCodeIndex)
         (currentKey == XINPUT_GAMEPAD_B) ||
         (currentKey == XINPUT_GAMEPAD_X) ||
         (currentKey == XINPUT_GAMEPAD_Y) ||
-        (currentKey == INPUT_GAMEPAD_LEFT_TRIGGER) ||
-        (currentKey == INPUT_GAMEPAD_RIGHT_TRIGGER))
+        (currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
     {
-        switch(currentKey)
+        if((g_xController->GetState().Gamepad.bLeftTrigger >= 128 && currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+            (g_xController->GetState().Gamepad.bRightTrigger >= 128 && currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
         {
-        case INPUT_GAMEPAD_LEFT_TRIGGER:
-        {
-            if(g_xController->GetState().Gamepad.bLeftTrigger >= 128)
-            {
-                g_reader->SetKeyPrevState(keyCodeIndex, 1);
-                return true;
-            }
+            if(foundKeyCode)
+                *foundKeyCode = currentKey;
+            return true;
         }
-        break;
-
-        case INPUT_GAMEPAD_RIGHT_TRIGGER:
+        else if(g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex))
         {
-            if(g_xController->GetState().Gamepad.bRightTrigger >= 128)
-            {
-                g_reader->SetKeyPrevState(keyCodeIndex, 1);
-                return true;
-            }
-        }
-        break;
-
-        default:
-        {
-            if(g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex))
-            {
-                g_reader->SetKeyPrevState(keyCodeIndex, 1);
-                return true;
-            }
-        }
-        break;
+            if(foundKeyCode)
+                *foundKeyCode = currentKey;
+            return true;
         }
     }
     return false;
@@ -636,8 +634,8 @@ static bool IsXControllerAltKeyToggleKeyDownToggle(int keyCodeIndex)
         (currentKey == XINPUT_GAMEPAD_B) ||
         (currentKey == XINPUT_GAMEPAD_X) ||
         (currentKey == XINPUT_GAMEPAD_Y) ||
-        (currentKey == INPUT_GAMEPAD_LEFT_TRIGGER) ||
-        (currentKey == INPUT_GAMEPAD_RIGHT_TRIGGER))
+        (currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
     {
         //Return if the high byte is true (ie key is down)
         int state = (g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex));
@@ -658,7 +656,7 @@ static void showIntroMenu()
     console_log("\n");
     console_log("---------------------------------------------------------------------\n");
     console_log("| Welcome to 3D Vision Compatibility Mode \"Unleashed\"!              |\n");
-    console_log("| Ver: 1.0.16                                                       |\n");
+    console_log("| Ver: 1.0.18                                                       |\n");
     console_log("| Developed by: Helifax (2019)                                      |\n");
     console_log("| If you would like to donate you can do it at: tavyhome@gmail.com  |\n");
     console_log("|                                                                   |\n");
@@ -768,6 +766,8 @@ static void showInfo()
 
     console_log("\n");
     console_log("- You can modify the Convergence and Separation values, by using the Nvidia Shortcut keys.\n");
+    console_log("- Press \"CTRL + SHIFT + PLUS (regular, not numpad)\" to increase Separation factor by 5%%.\n");
+    console_log("- Press \"CTRL + SHIFT + MINUS(regular, not numpad)\" to decrease Separation factor by 5%%.\n");
     console_log("- Press \"CTRL + SHIFT + HOME\" to print the current Separation Percentage & Convergence the driver is using.\n");
     console_log("  (Very useful, if you search the Convergence and Separation for a new game)!\n");
     console_log("- You can edit the \"3DVision_CM_Unleshed.ini\" file in real-time.\n");
@@ -945,7 +945,7 @@ int main()
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
     CSplashWnd splash;
     splash.Show();
-    //Sleep(4000);
+    Sleep(4000);
     splash.Hide();
     GdiplusShutdown(gdiplusToken);
 
