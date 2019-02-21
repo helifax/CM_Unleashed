@@ -182,6 +182,9 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
             if(temp != -1.0f && g_reader->_prevSeparationFactor != temp)
             {
                 // Apply the new separation
+                if(!g_reader->_isPressAndHoldSeparation)
+                    g_cmUnleashed->CM_GetSeparationFactor(&g_reader->_prevSeparationFactor);
+
                 g_cmUnleashed->CM_SetSeparationFactor(&temp);
                 g_reader->_pressAndHoldKey = currentKeyCode;
                 g_reader->_isPressAndHoldSeparation = true;
@@ -200,7 +203,7 @@ static void _Run_Keys_Hold(size_t keyIndex, size_t& returnIndex)
         if(g_reader->_isPressAndHoldSeparation)
         {
             g_cmUnleashed->CM_SetSeparationFactor(&g_reader->_prevSeparationFactor);
-            g_reader->_isPressAndHoldConvergence = false;
+            g_reader->_isPressAndHoldSeparation = false;
         }
         g_reader->SetKeyPrevState(g_reader->GetKeyNumber((int)keyIndex), 0);
         returnIndex = g_reader->GetNumberOfKeys();
@@ -547,7 +550,7 @@ static void _KeyThread()
 
 static bool IsKeyDown(int keyCode)
 {
-    return (GetKeyState(keyCode) & 0x80) != 0;
+    return (GetKeyState(keyCode) & 0x0080) != 0;
 }
 //-----------------------------------------------------------------------------
 
@@ -566,7 +569,7 @@ static bool IsAltKeyToggleKeyDown(int keyCodeIndex)
         ret = true;
     }
     // Don't overwrite the XBOX states!
-    else if((g_xController->GetState().Gamepad.wButtons != currentKey) && (currentKey != XINPUT_GAMEPAD_LEFT_TRIGGER) && (currentKey != XINPUT_GAMEPAD_RIGHT_TRIGGER))
+    else if((g_xController->GetState().Gamepad.wButtons != currentKey) && (currentKey != CUSTOM_XINPUT_GAMEPAD_LEFT_TRIGGER) && (currentKey != CUSTOM_XINPUT_GAMEPAD_RIGHT_TRIGGER))
         g_reader->SetKeyPrevState(keyCodeIndex, state);
 
     return ret;
@@ -580,31 +583,31 @@ static bool IsXControllerAltKeyDown(int keyCodeIndex, int* foundKeyCode)
 
     int currentKey = g_reader->GetKeyNumber(keyCodeIndex);
     if(
-        (currentKey == XINPUT_GAMEPAD_DPAD_UP) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_DOWN) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_LEFT) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_RIGHT) ||
-        (currentKey == XINPUT_GAMEPAD_START) ||
-        (currentKey == XINPUT_GAMEPAD_BACK) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_THUMB) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_THUMB) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_SHOULDER) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
-        (currentKey == XINPUT_GAMEPAD_A) ||
-        (currentKey == XINPUT_GAMEPAD_B) ||
-        (currentKey == XINPUT_GAMEPAD_X) ||
-        (currentKey == XINPUT_GAMEPAD_Y) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_UP) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_DOWN) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_LEFT) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_RIGHT) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_START) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_BACK) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_THUMB) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_THUMB) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_SHOULDER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_A) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_B) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_X) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_Y) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_TRIGGER))
     {
-        if((g_xController->GetState().Gamepad.bLeftTrigger >= 128 && currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
-            (g_xController->GetState().Gamepad.bRightTrigger >= 128 && currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
+        if((g_xController->GetState().Gamepad.bLeftTrigger >= 128 && currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+            (g_xController->GetState().Gamepad.bRightTrigger >= 128 && currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_TRIGGER))
         {
             if(foundKeyCode)
                 *foundKeyCode = currentKey;
             return true;
         }
-        else if(g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex))
+        else if(g_xController->GetState().Gamepad.wButtons == GetXInputRealKey(currentKey))
         {
             if(foundKeyCode)
                 *foundKeyCode = currentKey;
@@ -620,22 +623,22 @@ static bool IsXControllerAltKeyToggleKeyDownToggle(int keyCodeIndex)
     bool ret = false;
     int currentKey = g_reader->GetKeyNumber(keyCodeIndex);
     if(
-        (currentKey == XINPUT_GAMEPAD_DPAD_UP) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_DOWN) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_LEFT) ||
-        (currentKey == XINPUT_GAMEPAD_DPAD_RIGHT) ||
-        (currentKey == XINPUT_GAMEPAD_START) ||
-        (currentKey == XINPUT_GAMEPAD_BACK) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_THUMB) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_THUMB) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_SHOULDER) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
-        (currentKey == XINPUT_GAMEPAD_A) ||
-        (currentKey == XINPUT_GAMEPAD_B) ||
-        (currentKey == XINPUT_GAMEPAD_X) ||
-        (currentKey == XINPUT_GAMEPAD_Y) ||
-        (currentKey == XINPUT_GAMEPAD_LEFT_TRIGGER) ||
-        (currentKey == XINPUT_GAMEPAD_RIGHT_TRIGGER))
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_UP) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_DOWN) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_LEFT) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_DPAD_RIGHT) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_START) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_BACK) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_THUMB) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_THUMB) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_SHOULDER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_SHOULDER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_A) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_B) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_X) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_Y) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_LEFT_TRIGGER) ||
+        (currentKey == CUSTOM_XINPUT_GAMEPAD_RIGHT_TRIGGER))
     {
         //Return if the high byte is true (ie key is down)
         int state = (g_xController->GetState().Gamepad.wButtons & g_reader->GetKeyNumber(keyCodeIndex));
@@ -656,7 +659,7 @@ static void showIntroMenu()
     console_log("\n");
     console_log("---------------------------------------------------------------------\n");
     console_log("| Welcome to 3D Vision Compatibility Mode \"Unleashed\"!              |\n");
-    console_log("| Ver: 1.0.18                                                       |\n");
+    console_log("| Ver: 1.0.19                                                       |\n");
     console_log("| Developed by: Helifax (2019)                                      |\n");
     console_log("| If you would like to donate you can do it at: tavyhome@gmail.com  |\n");
     console_log("|                                                                   |\n");

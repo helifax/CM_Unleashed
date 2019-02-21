@@ -942,7 +942,10 @@ bool CMUnleashed::CM_GetSeparationFactor(float *factor)
     {
         if(_separationFactor != 0.0f)
         {
-            *factor = _separationFactor;
+            float separation = 0.0f;
+            CM_GetActualSeparation(&separation);
+
+            *factor = separation / _origSeparation;
             return true;
         }
     }
