@@ -909,7 +909,7 @@ static void menukeyHandler()
 }
 //-------------------------------------------------------------------------------------------
 
-int main()
+int main(int argc, char* argv[])
 {
     // Console SETUP
     ShowWindow(GetConsoleWindow(), SW_HIDE);
@@ -960,9 +960,30 @@ int main()
 
     // Read all Profiles
     g_profiles = new ProfileLoader();
-    // Profile Selection
-    showProfileSelection();
-    profileKeyHandler();
+
+    bool skip_profile_load = false;
+    if(argc == 2)
+    {
+        std::string profile = argv[1];
+        if(profile.find(".ini") != std::string::npos)
+        {
+            FILE* stream;
+            std::string profile_path = GetPath() + "\\Profiles\\" + profile;
+            if(fopen_s(&stream, profile_path.c_str(), "r") == 0)
+            {
+                fclose(stream);
+                g_profiles->SetCurrentProfileName(profile);
+                skip_profile_load = true;
+            }
+        }
+    }
+
+    if(!skip_profile_load)
+    {
+        // Profile Selection
+        showProfileSelection();
+        profileKeyHandler();
+    }
 
     // Show the Menu again
     showIntroMenu();
